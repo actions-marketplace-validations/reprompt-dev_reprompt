@@ -7,7 +7,9 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from reprompt.embeddings.ollama import OllamaEmbedder
+requests = pytest.importorskip("requests")
+
+from reprompt.embeddings.ollama import OllamaEmbedder  # noqa: E402
 
 
 def test_embed_calls_api():
@@ -86,8 +88,6 @@ def test_inherits_cosine_similarity():
 
 def test_embed_connection_error_raises_runtime_error():
     """ConnectionError during embed() should raise RuntimeError with helpful message."""
-    import requests
-
     embedder = OllamaEmbedder(url="http://localhost:11434")
     with patch("requests.post", side_effect=requests.ConnectionError("refused")):
         with pytest.raises(RuntimeError, match="Cannot connect to Ollama"):
@@ -96,8 +96,6 @@ def test_embed_connection_error_raises_runtime_error():
 
 def test_embed_timeout_raises_runtime_error():
     """Timeout during embed() should raise RuntimeError with helpful message."""
-    import requests
-
     embedder = OllamaEmbedder(url="http://localhost:11434")
     with patch("requests.post", side_effect=requests.Timeout("timed out")):
         with pytest.raises(RuntimeError, match="Cannot connect to Ollama"):
