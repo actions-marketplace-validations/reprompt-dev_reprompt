@@ -14,9 +14,9 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install uv
@@ -31,6 +31,6 @@ jobs:
         run: pytest tests/ -v --cov=reprompt --cov-report=xml
       - name: Upload coverage
         if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           file: coverage.xml
