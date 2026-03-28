@@ -32,49 +32,105 @@ def mcp_db(tmp_path, monkeypatch):
     return db
 
 
-def test_search_prompts_found(mcp_db):
+# ─── search_prompts: keyword mode ─────────────────────────────────────────
+
+
+def test_search_prompts_keyword_found(mcp_db):
     from reprompt.mcp import search_prompts
 
-    result = search_prompts("auth")
+    result = search_prompts(query="auth")
     data = json.loads(result)
     assert len(data) == 1
     assert "auth" in data[0]["text"]
 
 
-def test_search_prompts_not_found(mcp_db):
+def test_search_prompts_keyword_not_found(mcp_db):
     from reprompt.mcp import search_prompts
 
-    result = search_prompts("nonexistent_xyz")
+    result = search_prompts(query="nonexistent_xyz")
     assert "No prompts" in result
 
 
-def test_get_status(mcp_db):
-    from reprompt.mcp import get_status
+def test_search_prompts_keyword_with_limit(mcp_db):
+    from reprompt.mcp import search_prompts
 
-    result = json.loads(get_status())
-    assert result["total_prompts"] == 3
-
-
-def test_get_prompt_library_empty(mcp_db):
-    from reprompt.mcp import get_prompt_library
-
-    result = get_prompt_library()
-    assert "No patterns" in result
+    result = search_prompts(query="the", limit=2)
+    data = json.loads(result)
+    assert len(data) <= 2
 
 
-def test_get_trends(mcp_db):
-    from reprompt.mcp import get_trends
-
-    result = json.loads(get_trends(period="7d", windows=2))
-    assert "windows" in result
-    assert len(result["windows"]) == 2
+# ─── search_prompts: pattern browse mode ──────────────────────────────────
 
 
-def test_get_best_prompts_empty(mcp_db):
-    from reprompt.mcp import get_best_prompts
+def test_search_prompts_patterns_empty(mcp_db):
+    from reprompt.mcp import search_prompts
 
-    result = get_best_prompts(category="debug")
-    assert "No patterns" in result
+    result = search_prompts()
+    assert "No patterns yet" in result
+
+
+def test_search_prompts_patterns_category_empty(mcp_db):
+    from reprompt.mcp import search_prompts
+
+    result = search_prompts(category="debug")
+    assert "No patterns in category 'debug'" in result
+
+
+def _insert_pattern(db, text, freq, cat, avg_len):
+    """Helper to insert a pattern row into the test DB."""
+    _sql = (
+        "INSERT INTO prompt_patterns"
+        " (pattern_text, frequency, category, avg_length, projects, examples)"
+        " VALUES (?, ?, ?, ?, ?, ?)"
+    )
+    conn = db._conn()
+    try:
+        conn.execute(_sql, (text, freq, cat, avg_len, "[]", "[]"))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def test_search_prompts_patterns_with_data(mcp_db):
+    """When patterns exist, returns them as JSON."""
+    from reprompt.mcp import search_prompts
+
+    _insert_pattern(mcp_db, "fix the bug", 5, "debug", 20)
+    _insert_pattern(mcp_db, "add tests", 3, "test", 15)
+
+    result = search_prompts()
+    data = json.loads(result)
+    assert len(data) == 2
+    assert data[0]["pattern"] == "fix the bug"
+
+
+def test_search_prompts_patterns_category_filter(mcp_db):
+    """Category param filters patterns."""
+    from reprompt.mcp import search_prompts
+
+    _insert_pattern(mcp_db, "fix the bug", 5, "debug", 20)
+    _insert_pattern(mcp_db, "add tests", 3, "test", 15)
+
+    result = search_prompts(category="debug")
+    data = json.loads(result)
+    assert len(data) == 1
+    assert data[0]["category"] == "debug"
+
+
+def test_search_prompts_patterns_top_sort(mcp_db):
+    """top=True sorts by frequency descending."""
+    from reprompt.mcp import search_prompts
+
+    _insert_pattern(mcp_db, "low freq", 1, "debug", 10)
+    _insert_pattern(mcp_db, "high freq", 10, "implement", 25)
+
+    result = search_prompts(top=True, limit=5)
+    data = json.loads(result)
+    assert len(data) == 2
+    assert data[0]["frequency"] >= data[1]["frequency"]
+
+
+# ─── Other tools ──────────────────────────────────────────────────────────
 
 
 def test_scan_sessions_empty(tmp_path, monkeypatch):
@@ -111,3 +167,14 @@ def test_mcp_serve_cli(tmp_path, monkeypatch):
     result = runner.invoke(app, ["mcp-serve", "--help"])
     assert result.exit_code == 0
     assert "MCP" in result.output or "mcp" in result.output
+
+
+def test_tool_count():
+    """Verify the MCP server exposes exactly 6 tools."""
+    import asyncio
+
+    from reprompt.mcp import mcp as _mcp
+
+    tools = asyncio.run(_mcp.list_tools())
+    names = [t.name for t in tools]
+    assert len(tools) == 6, f"Expected 6 tools, got {len(tools)}: {names}"
