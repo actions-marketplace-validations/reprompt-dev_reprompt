@@ -144,6 +144,49 @@ def get_status() -> str:
 
 
 @mcp.tool
+def compare_prompts(prompt_a: str, prompt_b: str) -> str:
+    """Compare two prompts side by side using research-backed Prompt DNA analysis.
+
+    Returns scores and feature differences for both prompts, showing which
+    is stronger and why. Useful for choosing between two phrasings.
+
+    Args:
+        prompt_a: First prompt text
+        prompt_b: Second prompt text
+    """
+    from reprompt.core.extractors import extract_features
+    from reprompt.core.scorer import score_prompt as _score
+
+    dna_a = extract_features(prompt_a, source="mcp", session_id="mcp-compare")
+    dna_b = extract_features(prompt_b, source="mcp", session_id="mcp-compare")
+    score_a = _score(dna_a)
+    score_b = _score(dna_b)
+
+    def _fmt(dna, score):  # type: ignore[no-untyped-def]
+        return {
+            "total": score.total,
+            "structure": score.structure,
+            "context": score.context,
+            "position": score.position,
+            "repetition": score.repetition,
+            "clarity": score.clarity,
+            "task_type": dna.task_type,
+            "word_count": dna.word_count,
+        }
+
+    winner = "A" if score_a.total >= score_b.total else "B"
+    return json.dumps(
+        {
+            "prompt_a": _fmt(dna_a, score_a),
+            "prompt_b": _fmt(dna_b, score_b),
+            "winner": winner,
+            "difference": abs(score_a.total - score_b.total),
+        },
+        indent=2,
+    )
+
+
+@mcp.tool
 def compress_prompt(text: str) -> str:
     """Compress a prompt by removing filler words, simplifying phrases, and cleaning structure.
 
