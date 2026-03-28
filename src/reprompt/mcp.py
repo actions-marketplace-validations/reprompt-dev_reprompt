@@ -144,6 +144,32 @@ def get_status() -> str:
 
 
 @mcp.tool
+def compress_prompt(text: str) -> str:
+    """Compress a prompt by removing filler words, simplifying phrases, and cleaning structure.
+
+    Returns the compressed text with token savings. Uses 4-layer rule-based
+    compression — no LLM needed. Typical savings: 20-50%.
+
+    Args:
+        text: The prompt text to compress
+    """
+    from reprompt.core.compress import compress_prompt as _compress
+
+    result = _compress(text)
+    return json.dumps(
+        {
+            "original": result.original,
+            "compressed": result.compressed,
+            "original_tokens": result.original_tokens,
+            "compressed_tokens": result.compressed_tokens,
+            "savings_pct": result.savings_pct,
+            "changes": result.changes,
+        },
+        indent=2,
+    )
+
+
+@mcp.tool
 def score_prompt(text: str) -> str:
     """Score a prompt using research-backed analysis (0-100).
 
