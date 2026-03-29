@@ -15,15 +15,24 @@ from dataclasses import dataclass, field
 # ---------------------------------------------------------------------------
 
 PATTERNS: dict[str, re.Pattern[str]] = {
+    # API keys
     "api_key_openai": re.compile(r"sk-[a-zA-Z0-9_-]{20,}"),
     "api_key_aws": re.compile(r"AKIA[0-9A-Z]{16}"),
     "api_key_github": re.compile(r"ghp_[a-zA-Z0-9]{36}"),
     "api_key_github_fine": re.compile(r"github_pat_[a-zA-Z0-9_]{22,}"),
     "api_key_anthropic": re.compile(r"sk-ant-[a-zA-Z0-9_-]{20,}"),
     "api_key_stripe": re.compile(r"sk_(?:live|test)_[a-zA-Z0-9]{24,}"),
+    "api_key_google": re.compile(r"AIza[0-9A-Za-z\-_]{35}"),
+    "api_key_slack_bot": re.compile(r"xoxb-[0-9a-zA-Z\-]{24,}"),
+    "api_key_slack_user": re.compile(r"xoxp-[0-9a-zA-Z\-]{24,}"),
+    "api_key_slack_app": re.compile(r"xapp-[0-9a-zA-Z\-]{24,}"),
+    "api_key_npm": re.compile(r"npm_[a-zA-Z0-9]{36}"),
+    # Tokens
     "jwt_token": re.compile(r"eyJ[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{20,}"),
+    # PII
     "email": re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"),
     "ipv4": re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"),
+    # Credentials
     "password_assignment": re.compile(
         r"(?:password|passwd|pwd)\s*[=:]\s*[\"']?\S{4,}", re.IGNORECASE
     ),
@@ -32,6 +41,20 @@ PATTERNS: dict[str, re.Pattern[str]] = {
         r"\s*=\s*\S{4,}",
         re.IGNORECASE,
     ),
+    "db_connection_string": re.compile(
+        r"(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|mssql)"
+        r"://[^:]+:[^@]+@[^\s\"']{4,}",
+        re.IGNORECASE,
+    ),
+    # SSH keys & certificates
+    "ssh_private_key": re.compile(
+        r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----"
+    ),
+    "pem_certificate": re.compile(r"-----BEGIN CERTIFICATE-----"),
+    "ssh_key_path": re.compile(
+        r"~/\.ssh/(?:id_(?:rsa|ed25519|ecdsa|dsa)|authorized_keys|known_hosts)"
+    ),
+    # Paths
     "home_path_unix": re.compile(r"/(?:Users|home)/\w+/"),
 }
 
@@ -55,11 +78,20 @@ CATEGORY_MAP: dict[str, str] = {
     "api_key_github_fine": "API keys",
     "api_key_anthropic": "API keys",
     "api_key_stripe": "API keys",
+    "api_key_google": "API keys",
+    "api_key_slack_bot": "API keys",
+    "api_key_slack_user": "API keys",
+    "api_key_slack_app": "API keys",
+    "api_key_npm": "API keys",
     "jwt_token": "JWT tokens",
     "email": "Emails",
     "ipv4": "IP addresses",
     "password_assignment": "Passwords",
     "env_secret": "Env secrets",
+    "db_connection_string": "Database credentials",
+    "ssh_private_key": "SSH keys",
+    "pem_certificate": "SSH keys",
+    "ssh_key_path": "SSH keys",
     "home_path_unix": "Home paths",
 }
 
@@ -125,7 +157,9 @@ def scan_prompts(
 
     # Risk priority for highest_risk selection
     risk_priority = {
+        "SSH keys": 5,
         "API keys": 5,
+        "Database credentials": 5,
         "Passwords": 4,
         "Env secrets": 4,
         "JWT tokens": 3,

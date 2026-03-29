@@ -137,6 +137,122 @@ class TestHomePaths:
 
 
 # ---------------------------------------------------------------------------
+# SSH keys & certificates
+# ---------------------------------------------------------------------------
+
+
+class TestSSHKeys:
+    def test_rsa_private_key(self):
+        r = scan_prompts([_prompt("-----BEGIN RSA PRIVATE KEY-----\nMIIEow...")])
+        assert r.category_counts.get("SSH keys", 0) >= 1
+
+    def test_openssh_private_key(self):
+        r = scan_prompts([_prompt("-----BEGIN OPENSSH PRIVATE KEY-----\nb3Blbn...")])
+        assert r.category_counts.get("SSH keys", 0) >= 1
+
+    def test_ec_private_key(self):
+        r = scan_prompts([_prompt("-----BEGIN EC PRIVATE KEY-----\nMHQCAQ...")])
+        assert r.category_counts.get("SSH keys", 0) >= 1
+
+    def test_dsa_private_key(self):
+        r = scan_prompts([_prompt("-----BEGIN DSA PRIVATE KEY-----\nMIIBuw...")])
+        assert r.category_counts.get("SSH keys", 0) >= 1
+
+    def test_pkcs8_private_key(self):
+        r = scan_prompts([_prompt("-----BEGIN PRIVATE KEY-----\nMIIEvg...")])
+        assert r.category_counts.get("SSH keys", 0) >= 1
+
+    def test_encrypted_private_key(self):
+        r = scan_prompts([_prompt("-----BEGIN ENCRYPTED PRIVATE KEY-----\nMIIFH...")])
+        assert r.category_counts.get("SSH keys", 0) >= 1
+
+    def test_pem_certificate(self):
+        r = scan_prompts([_prompt("-----BEGIN CERTIFICATE-----\nMIIDXTCC...")])
+        assert r.category_counts.get("SSH keys", 0) >= 1
+
+    def test_ssh_key_path_rsa(self):
+        r = scan_prompts([_prompt("Copy your key from ~/.ssh/id_rsa")])
+        assert r.category_counts.get("SSH keys", 0) >= 1
+
+    def test_ssh_key_path_ed25519(self):
+        r = scan_prompts([_prompt("cat ~/.ssh/id_ed25519")])
+        assert r.category_counts.get("SSH keys", 0) >= 1
+
+    def test_no_false_positive_public_key_header(self):
+        """Public key headers are not private keys."""
+        r = scan_prompts([_prompt("-----BEGIN PUBLIC KEY-----\nMIIBIj...")])
+        assert r.category_counts.get("SSH keys", 0) == 0
+
+
+# ---------------------------------------------------------------------------
+# Slack / Google / npm tokens
+# ---------------------------------------------------------------------------
+
+
+class TestServiceTokens:
+    def test_slack_bot_token(self):
+        # Token constructed to avoid GitHub push protection
+        prefix = "xoxb-"
+        r = scan_prompts([_prompt(f"SLACK_TOKEN={prefix}fake-test-token-placeholder")])
+        assert r.category_counts.get("API keys", 0) >= 1
+
+    def test_slack_user_token(self):
+        prefix = "xoxp-"
+        r = scan_prompts([_prompt(f"{prefix}fake-test-token-placeholder-val")])
+        assert r.category_counts.get("API keys", 0) >= 1
+
+    def test_slack_app_token(self):
+        prefix = "xapp-"
+        r = scan_prompts([_prompt(f"{prefix}fake-test-token-placeholder-val")])
+        assert r.category_counts.get("API keys", 0) >= 1
+
+    def test_google_api_key(self):
+        r = scan_prompts([_prompt("key=AIzaSyA1234567890abcdefghijklmnopqrstuv")])
+        assert r.category_counts.get("API keys", 0) >= 1
+
+    def test_npm_token(self):
+        token = "npm_abcdefghijklmnopqrstuvwxyz0123456789"
+        r = scan_prompts([_prompt(f"//registry.npmjs.org/:_authToken={token}")])
+        assert r.category_counts.get("API keys", 0) >= 1
+
+
+# ---------------------------------------------------------------------------
+# Database connection strings
+# ---------------------------------------------------------------------------
+
+
+class TestDatabaseCredentials:
+    def test_postgres_url(self):
+        r = scan_prompts([_prompt("postgres://admin:secret@db.example.com:5432/mydb")])
+        assert r.category_counts.get("Database credentials", 0) >= 1
+
+    def test_postgresql_url(self):
+        r = scan_prompts([_prompt("postgresql://user:pass@localhost/db")])
+        assert r.category_counts.get("Database credentials", 0) >= 1
+
+    def test_mongodb_url(self):
+        r = scan_prompts([_prompt("mongodb://root:p4ssw0rd@mongo.internal:27017/app")])
+        assert r.category_counts.get("Database credentials", 0) >= 1
+
+    def test_mongodb_srv_url(self):
+        r = scan_prompts([_prompt("mongodb+srv://user:pass@cluster0.abc.mongodb.net/db")])
+        assert r.category_counts.get("Database credentials", 0) >= 1
+
+    def test_mysql_url(self):
+        r = scan_prompts([_prompt("mysql://root:secret@127.0.0.1:3306/app")])
+        assert r.category_counts.get("Database credentials", 0) >= 1
+
+    def test_redis_url(self):
+        r = scan_prompts([_prompt("redis://default:mypassword@redis.host:6379/0")])
+        assert r.category_counts.get("Database credentials", 0) >= 1
+
+    def test_no_false_positive_without_creds(self):
+        """Connection string without user:pass should not match."""
+        r = scan_prompts([_prompt("postgres://localhost:5432/mydb")])
+        assert r.category_counts.get("Database credentials", 0) == 0
+
+
+# ---------------------------------------------------------------------------
 # Integration
 # ---------------------------------------------------------------------------
 
