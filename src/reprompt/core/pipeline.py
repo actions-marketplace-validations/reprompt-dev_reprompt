@@ -183,7 +183,7 @@ def run_scan(
                     )
                     db.update_prompt_effectiveness(meta.session_id, score)
             except Exception:
-                pass  # non-critical — don't break scan if meta fails
+                logger.debug("Session metadata extraction failed for %s", file_path, exc_info=True)
 
     # Mark sessions processed only after successful dedup+store
     for file_path, adapter_name in scanned_files:

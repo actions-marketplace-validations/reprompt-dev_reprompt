@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,6 +19,11 @@ from reprompt.adapters.base import BaseAdapter
 from reprompt.adapters.filters import should_keep_prompt
 from reprompt.core.conversation import ConversationTurn
 from reprompt.core.models import Prompt
+
+logger = logging.getLogger(__name__)
+
+# Warn when file exceeds this size (200 MB)
+_LARGE_FILE_THRESHOLD = 200 * 1024 * 1024
 
 
 class ChatGPTAdapter(BaseAdapter):
@@ -33,6 +39,13 @@ class ChatGPTAdapter(BaseAdapter):
     def parse_session(self, path: Path) -> list[Prompt]:
         """Parse a ChatGPT conversations.json file into Prompt objects."""
         try:
+            file_size = Path(path).stat().st_size
+            if file_size > _LARGE_FILE_THRESHOLD:
+                logger.warning(
+                    "Large file (%d MB): %s — this may use significant memory",
+                    file_size // (1024 * 1024),
+                    path,
+                )
             data = json.loads(Path(path).read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             return []

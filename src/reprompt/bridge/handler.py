@@ -84,33 +84,19 @@ def _handle_status(db: PromptDB) -> dict[str, Any]:
 
 
 def _update_last_sync(db: PromptDB) -> None:
-    """Store last sync timestamp in the DB metadata.
-
-    Uses term_stats table with sentinel key. Stores Unix timestamp in count column.
-    """
-    now_ts = int(datetime.now(tz=timezone.utc).timestamp())
-    conn = db._conn()
-    try:
-        conn.execute(
-            "INSERT OR REPLACE INTO term_stats (term, count, df, tfidf_avg) VALUES (?, ?, ?, ?)",
-            ("__last_extension_sync__", now_ts, 0, 0.0),
-        )
-        conn.commit()
-    finally:
-        conn.close()
+    """Store last sync timestamp in the DB settings table."""
+    now_ts = str(int(datetime.now(tz=timezone.utc).timestamp()))
+    db.set_setting("last_extension_sync", now_ts)
 
 
 def _get_last_sync(db: PromptDB) -> str:
     """Get last sync timestamp. Returns empty string if never synced."""
-    conn = db._conn()
-    try:
-        row = conn.execute(
-            "SELECT count FROM term_stats WHERE term = '__last_extension_sync__'"
-        ).fetchone()
-        if row and row["count"]:
-            return datetime.fromtimestamp(row["count"], tz=timezone.utc).strftime(
+    val = db.get_setting("last_extension_sync")
+    if val:
+        try:
+            return datetime.fromtimestamp(int(val), tz=timezone.utc).strftime(
                 "%Y-%m-%dT%H:%M:%SZ"
             )
-        return ""
-    finally:
-        conn.close()
+        except (ValueError, OSError):
+            return ""
+    return ""

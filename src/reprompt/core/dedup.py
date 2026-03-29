@@ -6,8 +6,15 @@ L1: TF-IDF cosine similarity dedup (runs on hash-unique prompts)
 
 from __future__ import annotations
 
+import logging
+
 from reprompt.core.models import Prompt
 from reprompt.embeddings.base import BaseEmbedder
+
+logger = logging.getLogger(__name__)
+
+# Skip semantic dedup when batch exceeds this size to avoid O(n^2) blowup
+_MAX_SEMANTIC_DEDUP = 5000
 
 
 def _get_embedder(backend: str, ollama_url: str = "http://localhost:11434") -> BaseEmbedder:
@@ -68,6 +75,14 @@ class DedupEngine:
 
         # L1: Semantic dedup on hash-unique prompts
         if len(hash_unique) < 2:
+            return hash_unique, hash_dupes
+
+        if len(hash_unique) > _MAX_SEMANTIC_DEDUP:
+            logger.info(
+                "Skipping semantic dedup: %d prompts exceeds %d limit (hash dedup only)",
+                len(hash_unique),
+                _MAX_SEMANTIC_DEDUP,
+            )
             return hash_unique, hash_dupes
 
         embedder = _get_embedder(self._backend, ollama_url=self._ollama_url)

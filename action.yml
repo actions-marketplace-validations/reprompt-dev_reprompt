@@ -49,51 +49,62 @@ runs:
 
     - name: Install reprompt
       shell: bash
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
       run: |
-        if [ "${{ inputs.version }}" = "latest" ]; then
+        if [ "$INPUT_VERSION" = "latest" ]; then
           uv tool install reprompt-cli
         else
-          uv tool install "reprompt-cli==${{ inputs.version }}"
+          uv tool install "reprompt-cli==$INPUT_VERSION"
         fi
 
     - name: Scan sessions
       shell: bash
+      env:
+        INPUT_SOURCE: ${{ inputs.source }}
+        INPUT_PATH: ${{ inputs.path }}
       run: |
         SCAN_ARGS=""
-        if [ -n "${{ inputs.source }}" ]; then
-          SCAN_ARGS="$SCAN_ARGS --source ${{ inputs.source }}"
+        if [ -n "$INPUT_SOURCE" ]; then
+          SCAN_ARGS="$SCAN_ARGS --source $INPUT_SOURCE"
         fi
-        if [ -n "${{ inputs.path }}" ]; then
-          SCAN_ARGS="$SCAN_ARGS --path ${{ inputs.path }}"
+        if [ -n "$INPUT_PATH" ]; then
+          SCAN_ARGS="$SCAN_ARGS --path $INPUT_PATH"
         fi
         reprompt scan $SCAN_ARGS || true
 
     - name: Run lint
       id: lint
       shell: bash
+      env:
+        INPUT_SOURCE: ${{ inputs.source }}
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_STRICT: ${{ inputs.strict }}
+        INPUT_SCORE_THRESHOLD: ${{ inputs.score-threshold }}
+        INPUT_JSON: ${{ inputs.json }}
       run: |
         LINT_ARGS=""
-        if [ -n "${{ inputs.source }}" ]; then
-          LINT_ARGS="$LINT_ARGS --source ${{ inputs.source }}"
+        if [ -n "$INPUT_SOURCE" ]; then
+          LINT_ARGS="$LINT_ARGS --source $INPUT_SOURCE"
         fi
-        if [ -n "${{ inputs.path }}" ]; then
-          LINT_ARGS="$LINT_ARGS --path ${{ inputs.path }}"
+        if [ -n "$INPUT_PATH" ]; then
+          LINT_ARGS="$LINT_ARGS --path $INPUT_PATH"
         fi
-        if [ "${{ inputs.strict }}" = "true" ]; then
+        if [ "$INPUT_STRICT" = "true" ]; then
           LINT_ARGS="$LINT_ARGS --strict"
         fi
-        if [ "${{ inputs.score-threshold }}" != "0" ]; then
-          LINT_ARGS="$LINT_ARGS --score-threshold ${{ inputs.score-threshold }}"
+        if [ "$INPUT_SCORE_THRESHOLD" != "0" ]; then
+          LINT_ARGS="$LINT_ARGS --score-threshold $INPUT_SCORE_THRESHOLD"
         fi
 
         # Always get JSON for outputs
         JSON_RESULT=$(reprompt lint --json $LINT_ARGS 2>/dev/null || echo '{"errors":0,"warnings":0}')
-        echo "errors=$(echo $JSON_RESULT | python3 -c 'import sys,json; print(json.load(sys.stdin).get("errors",0))')" >> $GITHUB_OUTPUT
-        echo "warnings=$(echo $JSON_RESULT | python3 -c 'import sys,json; print(json.load(sys.stdin).get("warnings",0))')" >> $GITHUB_OUTPUT
-        echo "avg_score=$(echo $JSON_RESULT | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("score",{}).get("avg_score",0))')" >> $GITHUB_OUTPUT
+        echo "errors=$(echo "$JSON_RESULT" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("errors",0))')" >> "$GITHUB_OUTPUT"
+        echo "warnings=$(echo "$JSON_RESULT" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("warnings",0))')" >> "$GITHUB_OUTPUT"
+        echo "avg_score=$(echo "$JSON_RESULT" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("score",{}).get("avg_score",0))')" >> "$GITHUB_OUTPUT"
 
         # Run lint for display output
-        if [ "${{ inputs.json }}" = "true" ]; then
+        if [ "$INPUT_JSON" = "true" ]; then
           reprompt lint --json $LINT_ARGS
         else
           reprompt lint $LINT_ARGS
@@ -103,9 +114,9 @@ runs:
       if: always()
       shell: bash
       run: |
-        echo "## reprompt lint results" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "- Errors: ${{ steps.lint.outputs.errors }}" >> $GITHUB_STEP_SUMMARY
-        echo "- Warnings: ${{ steps.lint.outputs.warnings }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Run \`reprompt lint\` locally for full details." >> $GITHUB_STEP_SUMMARY
+        echo "## reprompt lint results" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Errors: ${{ steps.lint.outputs.errors }}" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Warnings: ${{ steps.lint.outputs.warnings }}" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "Run \`reprompt lint\` locally for full details." >> "$GITHUB_STEP_SUMMARY"

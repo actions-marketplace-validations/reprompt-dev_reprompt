@@ -24,8 +24,9 @@ class PromptDB:
 
     def _conn(self) -> sqlite3.Connection:
         """Get a connection with row_factory set."""
-        conn = sqlite3.connect(str(self.path))
+        conn = sqlite3.connect(str(self.path), timeout=10)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
         return conn
 
     def _init_schema(self) -> None:
@@ -206,6 +207,17 @@ class PromptDB:
                 ).fetchall()
             else:
                 rows = conn.execute("SELECT * FROM prompts ORDER BY id").fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def get_recent_prompts(self, limit: int = 100) -> list[dict[str, Any]]:
+        """Return the N most recent prompts (by id desc), as dicts."""
+        conn = self._conn()
+        try:
+            rows = conn.execute(
+                "SELECT * FROM prompts ORDER BY id DESC LIMIT ?", (limit,)
+            ).fetchall()
             return [dict(r) for r in rows]
         finally:
             conn.close()

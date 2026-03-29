@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -612,7 +613,8 @@ def _mixed_zh_en_analyzer(text: str) -> list[str]:
 
 def _is_noise_phrase(term: str) -> bool:
     """Filter out path fragments, usernames, year numbers, and other noise from TF-IDF results."""
-    noise_tokens = {"users", "chris", "projects", "home", "usr", "var", "tmp", "src", "py"}
+    _home_name = Path.home().name.lower()
+    noise_tokens = {"users", _home_name, "projects", "home", "usr", "var", "tmp", "src", "py"}
     words = set(term.lower().split())
     # Skip if majority of words are path/noise tokens
     if len(words & noise_tokens) >= len(words) * 0.5:

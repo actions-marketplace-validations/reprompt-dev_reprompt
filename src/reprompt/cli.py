@@ -187,6 +187,9 @@ def _register_late_commands() -> None:
 
 def _load_plugins() -> None:
     """Auto-discover and load reprompt plugins (e.g. reprompt-pro)."""
+    import logging
+
+    logger = logging.getLogger(__name__)
     try:
         from importlib.metadata import entry_points
 
@@ -195,8 +198,8 @@ def _load_plugins() -> None:
             try:
                 register_fn = ep.load()
                 register_fn(app)
-            except Exception:
-                pass  # plugin load failure should never break core CLI
+            except Exception as exc:
+                logger.debug("Failed to load plugin %s: %s", ep.name, exc)
     except Exception:
         pass
 
@@ -650,6 +653,14 @@ def purge(
     db = PromptDB(settings.db_path)
 
     if all_:
+        stats = db.get_stats()
+        total = stats.get("total_prompts", 0)
+        if total > 0:
+            confirm = typer.confirm(
+                f"This will delete all {total} prompts and reset the database. Continue?"
+            )
+            if not confirm:
+                raise typer.Abort()
         deleted = db.purge_all()
         console.print(f"[bold red]Purged all {deleted} prompts and reset database[/bold red]")
         console.print("Run [bold]reprompt scan[/bold] to re-import your sessions.")

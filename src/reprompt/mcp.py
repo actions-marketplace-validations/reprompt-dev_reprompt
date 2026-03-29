@@ -19,9 +19,11 @@ Register in Claude Code (.mcp.json):
 from __future__ import annotations
 
 import json
+import logging
 
 from fastmcp import FastMCP
 
+logger = logging.getLogger(__name__)
 mcp = FastMCP(name="reprompt")
 
 
@@ -64,43 +66,47 @@ def search_prompts(
              Only used when query is omitted.
         limit: Maximum results to return (default 10)
     """
-    db, _ = _get_db()
+    try:
+        db, _ = _get_db()
 
-    # Keyword search mode: search raw prompt history
-    if query is not None:
-        results = db.search_prompts(query, limit=limit)
-        if not results:
-            return f"No prompts matching '{query}'"
+        # Keyword search mode: search raw prompt history
+        if query is not None:
+            results = db.search_prompts(query, limit=limit)
+            if not results:
+                return f"No prompts matching '{query}'"
+            items = []
+            for r in results:
+                items.append(
+                    {
+                        "text": r["text"],
+                        "source": r.get("source", ""),
+                        "project": r.get("project", ""),
+                        "date": (r.get("timestamp") or "")[:10],
+                    }
+                )
+            return json.dumps(items, indent=2)
+
+        # Pattern browse mode: search the pattern library
+        patterns = db.get_patterns(category=category)
+        if top:
+            patterns = sorted(patterns, key=lambda p: p.get("frequency", 0), reverse=True)
         items = []
-        for r in results:
+        for p in patterns[:limit]:
             items.append(
                 {
-                    "text": r["text"],
-                    "source": r.get("source", ""),
-                    "project": r.get("project", ""),
-                    "date": (r.get("timestamp") or "")[:10],
+                    "pattern": p["pattern_text"],
+                    "frequency": p["frequency"],
+                    "category": p["category"],
+                    "avg_length": p.get("avg_length", 0),
                 }
             )
+        if not items:
+            msg = f"No patterns in category '{category}'" if category else "No patterns yet"
+            return f"{msg}. Run `reprompt scan` first."
         return json.dumps(items, indent=2)
-
-    # Pattern browse mode: search the pattern library
-    patterns = db.get_patterns(category=category)
-    if top:
-        patterns = sorted(patterns, key=lambda p: p.get("frequency", 0), reverse=True)
-    items = []
-    for p in patterns[:limit]:
-        items.append(
-            {
-                "pattern": p["pattern_text"],
-                "frequency": p["frequency"],
-                "category": p["category"],
-                "avg_length": p.get("avg_length", 0),
-            }
-        )
-    if not items:
-        msg = f"No patterns in category '{category}'" if category else "No patterns yet"
-        return f"{msg}. Run `reprompt scan` first."
-    return json.dumps(items, indent=2)
+    except Exception as exc:
+        logger.debug("search_prompts error: %s", exc)
+        return json.dumps({"error": str(exc)})
 
 
 @mcp.tool
@@ -114,36 +120,40 @@ def compare_prompts(prompt_a: str, prompt_b: str) -> str:
         prompt_a: First prompt text
         prompt_b: Second prompt text
     """
-    from reprompt.core.extractors import extract_features
-    from reprompt.core.scorer import score_prompt as _score
+    try:
+        from reprompt.core.extractors import extract_features
+        from reprompt.core.scorer import score_prompt as _score
 
-    dna_a = extract_features(prompt_a, source="mcp", session_id="mcp-compare")
-    dna_b = extract_features(prompt_b, source="mcp", session_id="mcp-compare")
-    score_a = _score(dna_a)
-    score_b = _score(dna_b)
+        dna_a = extract_features(prompt_a, source="mcp", session_id="mcp-compare")
+        dna_b = extract_features(prompt_b, source="mcp", session_id="mcp-compare")
+        score_a = _score(dna_a)
+        score_b = _score(dna_b)
 
-    def _fmt(dna, score):  # type: ignore[no-untyped-def]
-        return {
-            "total": score.total,
-            "structure": score.structure,
-            "context": score.context,
-            "position": score.position,
-            "repetition": score.repetition,
-            "clarity": score.clarity,
-            "task_type": dna.task_type,
-            "word_count": dna.word_count,
-        }
+        def _fmt(dna, score):  # type: ignore[no-untyped-def]
+            return {
+                "total": score.total,
+                "structure": score.structure,
+                "context": score.context,
+                "position": score.position,
+                "repetition": score.repetition,
+                "clarity": score.clarity,
+                "task_type": dna.task_type,
+                "word_count": dna.word_count,
+            }
 
-    winner = "A" if score_a.total >= score_b.total else "B"
-    return json.dumps(
-        {
-            "prompt_a": _fmt(dna_a, score_a),
-            "prompt_b": _fmt(dna_b, score_b),
-            "winner": winner,
-            "difference": abs(score_a.total - score_b.total),
-        },
-        indent=2,
-    )
+        winner = "A" if score_a.total >= score_b.total else "B"
+        return json.dumps(
+            {
+                "prompt_a": _fmt(dna_a, score_a),
+                "prompt_b": _fmt(dna_b, score_b),
+                "winner": winner,
+                "difference": abs(score_a.total - score_b.total),
+            },
+            indent=2,
+        )
+    except Exception as exc:
+        logger.debug("compare_prompts error: %s", exc)
+        return json.dumps({"error": str(exc)})
 
 
 @mcp.tool
@@ -156,20 +166,24 @@ def compress_prompt(text: str) -> str:
     Args:
         text: The prompt text to compress
     """
-    from reprompt.core.compress import compress_prompt as _compress
+    try:
+        from reprompt.core.compress import compress_prompt as _compress
 
-    result = _compress(text)
-    return json.dumps(
-        {
-            "original": result.original,
-            "compressed": result.compressed,
-            "original_tokens": result.original_tokens,
-            "compressed_tokens": result.compressed_tokens,
-            "savings_pct": result.savings_pct,
-            "changes": result.changes,
-        },
-        indent=2,
-    )
+        result = _compress(text)
+        return json.dumps(
+            {
+                "original": result.original,
+                "compressed": result.compressed,
+                "original_tokens": result.original_tokens,
+                "compressed_tokens": result.compressed_tokens,
+                "savings_pct": result.savings_pct,
+                "changes": result.changes,
+            },
+            indent=2,
+        )
+    except Exception as exc:
+        logger.debug("compress_prompt error: %s", exc)
+        return json.dumps({"error": str(exc)})
 
 
 @mcp.tool
@@ -182,26 +196,30 @@ def score_prompt(text: str) -> str:
     Args:
         text: The prompt text to score
     """
-    from reprompt.core.extractors import extract_features
-    from reprompt.core.scorer import score_prompt as _score
+    try:
+        from reprompt.core.extractors import extract_features
+        from reprompt.core.scorer import score_prompt as _score
 
-    dna = extract_features(text, source="mcp", session_id="mcp-score")
-    breakdown = _score(dna)
-    return json.dumps(
-        {
-            "total": breakdown.total,
-            "structure": breakdown.structure,
-            "context": breakdown.context,
-            "position": breakdown.position,
-            "repetition": breakdown.repetition,
-            "clarity": breakdown.clarity,
-            "task_type": dna.task_type,
-            "suggestions": [
-                {"message": s.message, "impact": s.impact} for s in breakdown.suggestions[:3]
-            ],
-        },
-        indent=2,
-    )
+        dna = extract_features(text, source="mcp", session_id="mcp-score")
+        breakdown = _score(dna)
+        return json.dumps(
+            {
+                "total": breakdown.total,
+                "structure": breakdown.structure,
+                "context": breakdown.context,
+                "position": breakdown.position,
+                "repetition": breakdown.repetition,
+                "clarity": breakdown.clarity,
+                "task_type": dna.task_type,
+                "suggestions": [
+                    {"message": s.message, "impact": s.impact} for s in breakdown.suggestions[:3]
+                ],
+            },
+            indent=2,
+        )
+    except Exception as exc:
+        logger.debug("score_prompt error: %s", exc)
+        return json.dumps({"error": str(exc)})
 
 
 @mcp.tool
@@ -214,31 +232,35 @@ def check_privacy(limit: int = 100) -> str:
     Args:
         limit: Maximum prompts to scan (default 100, most recent)
     """
-    from reprompt.core.privacy_scan import scan_prompts
+    try:
+        from reprompt.core.privacy_scan import scan_prompts
 
-    db, _ = _get_db()
-    rows = db.get_all_prompts()
-    prompts = [
-        {"text": r["text"], "source": r.get("source", "unknown"), "id": r.get("id")}
-        for r in rows[-limit:]
-    ]
-    result = scan_prompts(prompts)
-    return json.dumps(
-        {
-            "prompts_scanned": result.prompts_scanned,
-            "total_findings": len(result.matches),
-            "categories": result.category_counts,
-            "highest_risk": (
-                {
-                    "category": result.highest_risk.category,
-                    "source": result.highest_risk.source,
-                }
-                if result.highest_risk
-                else None
-            ),
-        },
-        indent=2,
-    )
+        db, _ = _get_db()
+        rows = db.get_recent_prompts(limit=limit)
+        prompts = [
+            {"text": r["text"], "source": r.get("source", "unknown"), "id": r.get("id")}
+            for r in rows
+        ]
+        result = scan_prompts(prompts)
+        return json.dumps(
+            {
+                "prompts_scanned": result.prompts_scanned,
+                "total_findings": len(result.matches),
+                "categories": result.category_counts,
+                "highest_risk": (
+                    {
+                        "category": result.highest_risk.category,
+                        "source": result.highest_risk.source,
+                    }
+                    if result.highest_risk
+                    else None
+                ),
+            },
+            indent=2,
+        )
+    except Exception as exc:
+        logger.debug("check_privacy error: %s", exc)
+        return json.dumps({"error": str(exc)})
 
 
 @mcp.tool
@@ -251,20 +273,24 @@ def scan_sessions(source: str | None = None) -> str:
     Args:
         source: Specific source to scan (claude-code, openclaw). Scans all if omitted.
     """
-    from reprompt.core.pipeline import run_scan
+    try:
+        from reprompt.core.pipeline import run_scan
 
-    _, settings = _get_db()
-    result = run_scan(source=source, settings=settings)
-    return json.dumps(
-        {
-            "sessions_scanned": result.sessions_scanned,
-            "prompts_found": result.total_parsed,
-            "unique": result.unique_after_dedup,
-            "duplicates": result.duplicates,
-            "new_stored": result.new_stored,
-        },
-        indent=2,
-    )
+        _, settings = _get_db()
+        result = run_scan(source=source, settings=settings)
+        return json.dumps(
+            {
+                "sessions_scanned": result.sessions_scanned,
+                "prompts_found": result.total_parsed,
+                "unique": result.unique_after_dedup,
+                "duplicates": result.duplicates,
+                "new_stored": result.new_stored,
+            },
+            indent=2,
+        )
+    except Exception as exc:
+        logger.debug("scan_sessions error: %s", exc)
+        return json.dumps({"error": str(exc)})
 
 
 # ─── Resources ──────────────────────────────────────────────────────────────

@@ -36,6 +36,9 @@ def _render_zero_state(console: Console, data: DashboardData) -> str:
     )
 
     if data.discoveries:
+        total_sessions = sum(d["sessions"] for d in data.discoveries)
+        total_turns = sum(d.get("turns_estimate", 0) for d in data.discoveries)
+
         table = Table(show_header=True, header_style="bold")
         table.add_column("Tool")
         table.add_column("Sessions", justify="right")
@@ -49,13 +52,25 @@ def _render_zero_state(console: Console, data: DashboardData) -> str:
             )
 
         console.print()
-        console.print("  [bold green]Discovered AI tools:[/bold green]")
+        console.print(
+            f"  [bold green]Found {total_sessions} sessions "
+            f"(~{total_turns:,} turns) across {len(data.discoveries)} AI tools:[/bold green]"
+        )
         console.print(table)
         console.print()
-        console.print("  Run [bold cyan]reprompt scan[/bold cyan] to import your prompts.")
+        console.print(
+            "  [bold cyan]reprompt scan[/bold cyan]"
+            "  — import all and analyze your prompts"
+        )
+        console.print(
+            "  [dim]Takes ~10-30 seconds depending on session count[/dim]"
+        )
     else:
         console.print()
         console.print("  No AI coding tools detected.")
+        console.print()
+        console.print("  [bold]Supported tools:[/bold] Claude Code, Cursor, Aider, "
+                       "Gemini CLI, Cline, OpenClaw, ChatGPT, Codex CLI")
         console.print("  Run [bold cyan]reprompt scan --help[/bold cyan] to get started.")
 
     console.print()
