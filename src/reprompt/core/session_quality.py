@@ -155,11 +155,13 @@ def score_session(
 
     # Efficiency: productive_ratio is 0-1
     if agent_report is not None:
-        components["efficiency"] = agent_report.efficiency.productive_ratio * 100
+        ratio = agent_report.efficiency.productive_ratio
+        components["efficiency"] = max(0.0, min(100.0, ratio * 100))
 
     # Focus: retention_ratio is 0-1
     if distill_result is not None:
-        components["focus"] = distill_result.stats.retention_ratio * 100
+        ratio = distill_result.stats.retention_ratio
+        components["focus"] = max(0.0, min(100.0, ratio * 100))
 
     # Outcome: effectiveness_score is 0-1
     if effectiveness_score is not None:

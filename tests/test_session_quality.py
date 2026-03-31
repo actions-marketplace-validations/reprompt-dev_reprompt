@@ -435,6 +435,20 @@ class TestEdgeCases:
         assert q.quality_score == 0.0
         assert q.frustration.abandonment is False
 
+    def test_efficiency_clamped_above_1(self):
+        """productive_ratio > 1.0 should clamp efficiency to 100."""
+        conv = _conv([_user(0), _asst(1, ["Read"])])
+        report = _agent_report(productive_ratio=1.5)
+        q = score_session(conv, agent_report=report)
+        assert q.efficiency == 100.0
+
+    def test_focus_clamped_above_1(self):
+        """retention_ratio > 1.0 should clamp focus to 100."""
+        conv = _conv([_user(0), _asst(1, ["Read"])])
+        result = _distill_result(retention_ratio=1.2)
+        q = score_session(conv, distill_result=result)
+        assert q.focus == 100.0
+
     def test_session_id_propagated(self):
         conv = _conv([_user(0)], sid="my-session-123")
         q = score_session(conv, avg_prompt_score=50.0)

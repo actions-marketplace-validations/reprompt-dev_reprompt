@@ -1856,7 +1856,7 @@ def _create_host_wrapper() -> Path:
     # Find the Python executable that has reprompt installed
     python_path = sys_mod.executable
 
-    wrapper_path.write_text(f"#!/bin/sh\nexec {python_path} -u -m reprompt.bridge.host\n")
+    wrapper_path.write_text(f'#!/bin/sh\nexec "{python_path}" -u -m reprompt.bridge.host\n')
     wrapper_path.chmod(wrapper_path.stat().st_mode | stat.S_IEXEC)
     return wrapper_path
 

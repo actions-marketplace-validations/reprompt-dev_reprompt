@@ -186,36 +186,70 @@ def run_scan(
                 logger.debug("Session metadata extraction failed for %s", file_path, exc_info=True)
 
     # Compute session quality scores
+    from datetime import datetime
+
     from reprompt.core.agent import analyze_session
+    from reprompt.core.conversation import Conversation
     from reprompt.core.distill import distill_conversation
     from reprompt.core.session_quality import score_session
 
+    quality_failures = 0
     for file_path, adapter_name in scanned_files:
         try:
             matched = next((a for a in adapters if a.name == adapter_name), None)
             if not matched:
                 continue
-            conversation = matched.parse_conversation(Path(file_path))
-            if not conversation or not conversation.turns:
+
+            # parse_conversation returns list[ConversationTurn], wrap into Conversation
+            turns = matched.parse_conversation(Path(file_path))
+            if not turns:
                 continue
+
+            session_id = Path(file_path).stem
+            start_time = None
+            end_time = None
+            duration = None
+            timestamps = [t.timestamp for t in turns if t.timestamp]
+            if len(timestamps) >= 2:
+                start_time = timestamps[0]
+                end_time = timestamps[-1]
+                try:
+                    start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+                    end_dt = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
+                    duration = int((end_dt - start_dt).total_seconds())
+                except (ValueError, TypeError):
+                    pass
+
+            project = None
+            if hasattr(matched, "_project_from_path"):
+                project = matched._project_from_path(file_path)
+
+            conversation = Conversation(
+                session_id=session_id,
+                source=adapter_name,
+                project=project,
+                turns=turns,
+                start_time=start_time,
+                end_time=end_time,
+                duration_seconds=duration,
+            )
 
             # Agent analysis (efficiency, error loops)
             agent_report = None
             try:
                 agent_report = analyze_session(conversation)
             except Exception:
-                logger.debug("Agent analysis failed for %s", file_path, exc_info=True)
+                logger.warning("Agent analysis failed for %s", file_path, exc_info=True)
 
             # Distill analysis (focus/retention)
             distill_result = None
             try:
                 distill_result = distill_conversation(conversation)
             except Exception:
-                logger.debug("Distill analysis failed for %s", file_path, exc_info=True)
+                logger.warning("Distill analysis failed for %s", file_path, exc_info=True)
 
             # Avg prompt score from stored features
             avg_prompt_score = None
-            session_id = Path(file_path).stem
             scores = db.get_prompt_scores_for_session(session_id)
             if scores:
                 avg_prompt_score = sum(scores) / len(scores)
@@ -244,7 +278,11 @@ def run_scan(
                 quality_insight=quality.insight,
             )
         except Exception:
-            logger.debug("Session quality scoring failed for %s", file_path, exc_info=True)
+            quality_failures += 1
+            logger.warning("Session quality scoring failed for %s", file_path, exc_info=True)
+
+    if quality_failures:
+        logger.warning("Quality scoring failed for %d session(s)", quality_failures)
 
     # Mark sessions processed only after successful dedup+store
     for file_path, adapter_name in scanned_files:
