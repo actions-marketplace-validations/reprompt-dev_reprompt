@@ -185,6 +185,67 @@ def run_scan(
             except Exception:
                 logger.debug("Session metadata extraction failed for %s", file_path, exc_info=True)
 
+    # Compute session quality scores
+    from reprompt.core.agent import analyze_session
+    from reprompt.core.distill import distill_conversation
+    from reprompt.core.session_quality import score_session
+
+    for file_path, adapter_name in scanned_files:
+        try:
+            matched = next((a for a in adapters if a.name == adapter_name), None)
+            if not matched:
+                continue
+            conversation = matched.parse_conversation(Path(file_path))
+            if not conversation or not conversation.turns:
+                continue
+
+            # Agent analysis (efficiency, error loops)
+            agent_report = None
+            try:
+                agent_report = analyze_session(conversation)
+            except Exception:
+                logger.debug("Agent analysis failed for %s", file_path, exc_info=True)
+
+            # Distill analysis (focus/retention)
+            distill_result = None
+            try:
+                distill_result = distill_conversation(conversation)
+            except Exception:
+                logger.debug("Distill analysis failed for %s", file_path, exc_info=True)
+
+            # Avg prompt score from stored features
+            avg_prompt_score = None
+            session_id = Path(file_path).stem
+            scores = db.get_prompt_scores_for_session(session_id)
+            if scores:
+                avg_prompt_score = sum(scores) / len(scores)
+
+            # Effectiveness score from session_meta
+            effectiveness = db.get_effectiveness_for_session(session_id)
+
+            quality = score_session(
+                conversation,
+                agent_report=agent_report,
+                distill_result=distill_result,
+                effectiveness_score=effectiveness,
+                avg_prompt_score=avg_prompt_score,
+            )
+            db.upsert_session_quality(
+                session_id=quality.session_id,
+                quality_score=quality.quality_score,
+                prompt_quality_score=quality.prompt_quality,
+                efficiency_score=quality.efficiency,
+                focus_score=quality.focus,
+                outcome_score=quality.outcome,
+                has_abandonment=quality.frustration.abandonment,
+                has_escalation=quality.frustration.escalation,
+                stall_turns=quality.frustration.stall_turns,
+                session_type=quality.session_type,
+                quality_insight=quality.insight,
+            )
+        except Exception:
+            logger.debug("Session quality scoring failed for %s", file_path, exc_info=True)
+
     # Mark sessions processed only after successful dedup+store
     for file_path, adapter_name in scanned_files:
         db.mark_session_processed(file_path, source=adapter_name)

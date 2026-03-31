@@ -14,7 +14,7 @@ class PromptDB:
     """SQLite-backed storage for prompt data."""
 
     # Schema version constants (increment when adding migrations)
-    _SCHEMA_VERSION = 2  # v1=initial schema, v2=v0.8 effectiveness columns
+    _SCHEMA_VERSION = 3  # v1=initial, v2=effectiveness, v3=session quality
 
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -159,6 +159,25 @@ class PromptDB:
                         conn.execute(stmt)
                     except sqlite3.OperationalError:
                         pass  # column already exists (DB created after v0.8)
+
+            if current < 3:
+                # v3 (v1.8.0): session quality columns on session_meta
+                for stmt in [
+                    "ALTER TABLE session_meta ADD COLUMN quality_score REAL",
+                    "ALTER TABLE session_meta ADD COLUMN prompt_quality_score REAL",
+                    "ALTER TABLE session_meta ADD COLUMN efficiency_score REAL",
+                    "ALTER TABLE session_meta ADD COLUMN focus_score REAL",
+                    "ALTER TABLE session_meta ADD COLUMN outcome_score REAL",
+                    "ALTER TABLE session_meta ADD COLUMN has_abandonment INTEGER DEFAULT 0",
+                    "ALTER TABLE session_meta ADD COLUMN has_escalation INTEGER DEFAULT 0",
+                    "ALTER TABLE session_meta ADD COLUMN stall_turns INTEGER DEFAULT 0",
+                    "ALTER TABLE session_meta ADD COLUMN session_type TEXT",
+                    "ALTER TABLE session_meta ADD COLUMN quality_insight TEXT",
+                ]:
+                    try:
+                        conn.execute(stmt)
+                    except sqlite3.OperationalError:
+                        pass  # column already exists
 
             # Set version to current
             conn.execute(f"PRAGMA user_version = {self._SCHEMA_VERSION}")
@@ -711,6 +730,109 @@ class PromptDB:
                    FROM session_meta"""
             ).fetchone()
             return dict(row) if row else {}
+        finally:
+            conn.close()
+
+    def upsert_session_quality(
+        self,
+        session_id: str,
+        quality_score: float,
+        prompt_quality_score: float | None = None,
+        efficiency_score: float | None = None,
+        focus_score: float | None = None,
+        outcome_score: float | None = None,
+        has_abandonment: bool = False,
+        has_escalation: bool = False,
+        stall_turns: int = 0,
+        session_type: str | None = None,
+        quality_insight: str = "",
+    ) -> None:
+        """Update quality columns on an existing session_meta row."""
+        conn = self._conn()
+        try:
+            conn.execute(
+                """UPDATE session_meta SET
+                     quality_score = ?,
+                     prompt_quality_score = ?,
+                     efficiency_score = ?,
+                     focus_score = ?,
+                     outcome_score = ?,
+                     has_abandonment = ?,
+                     has_escalation = ?,
+                     stall_turns = ?,
+                     session_type = ?,
+                     quality_insight = ?
+                   WHERE session_id = ?""",
+                (
+                    quality_score,
+                    prompt_quality_score,
+                    efficiency_score,
+                    focus_score,
+                    outcome_score,
+                    int(has_abandonment),
+                    int(has_escalation),
+                    stall_turns,
+                    session_type,
+                    quality_insight,
+                    session_id,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def get_sessions_with_quality(
+        self,
+        limit: int = 50,
+        source: str | None = None,
+        order_by: str = "start_time",
+    ) -> list[dict[str, Any]]:
+        """Return session metadata with quality scores.
+
+        order_by: 'start_time' (default, newest first) or 'quality_score' (best first).
+        """
+        valid_orders = {"start_time", "quality_score", "effectiveness_score"}
+        col = order_by if order_by in valid_orders else "start_time"
+        conn = self._conn()
+        try:
+            if source:
+                rows = conn.execute(
+                    f"SELECT * FROM session_meta WHERE source = ? ORDER BY {col} DESC LIMIT ?",
+                    (source, limit),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    f"SELECT * FROM session_meta ORDER BY {col} DESC LIMIT ?",
+                    (limit,),
+                ).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def get_effectiveness_for_session(self, session_id: str) -> float | None:
+        """Return effectiveness_score for a session, or None if not found."""
+        conn = self._conn()
+        try:
+            row = conn.execute(
+                "SELECT effectiveness_score FROM session_meta WHERE session_id = ?",
+                (session_id,),
+            ).fetchone()
+            return row[0] if row else None
+        finally:
+            conn.close()
+
+    def get_prompt_scores_for_session(self, session_id: str) -> list[float]:
+        """Return overall_score values for prompts in a session."""
+        conn = self._conn()
+        try:
+            rows = conn.execute(
+                """SELECT pf.overall_score
+                   FROM prompts p
+                   JOIN prompt_features pf ON p.hash = pf.prompt_hash
+                   WHERE p.session_id = ? AND pf.overall_score IS NOT NULL""",
+                (session_id,),
+            ).fetchall()
+            return [r[0] for r in rows]
         finally:
             conn.close()
 

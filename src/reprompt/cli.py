@@ -1917,6 +1917,64 @@ def extension_status() -> None:
 
 
 @app.command(rich_help_panel="Analyze")
+def sessions(
+    last: int = typer.Option(10, "--last", help="Show N most recent sessions"),
+    source: str = typer.Option(
+        None, "--source", "-s", help="Filter by source (e.g. claude-code, cursor)"
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
+    detail: str = typer.Option(None, "--detail", help="Deep-dive into a session ID"),
+    copy: bool = typer.Option(False, "--copy", help="Copy result to clipboard"),
+) -> None:
+    """Session quality overview: composite scores, frustration signals, trends."""
+    import json as json_mod
+
+    from reprompt.config import Settings
+    from reprompt.output.sessions_terminal import render_session_detail, render_sessions_table
+    from reprompt.storage.db import PromptDB
+
+    settings = Settings()
+    db = PromptDB(settings.db_path)
+
+    if detail:
+        # Single session detail view
+        all_sessions = db.get_sessions_with_quality(limit=500)
+        match = next((s for s in all_sessions if s.get("session_id") == detail), None)
+        if not match:
+            # Try prefix match
+            match = next(
+                (s for s in all_sessions if (s.get("session_id") or "").startswith(detail)),
+                None,
+            )
+        if not match:
+            typer.echo(f"Session '{detail}' not found.")
+            raise typer.Exit(1)
+        if json_output:
+            typer.echo(json_mod.dumps(match, indent=2, default=str))
+        else:
+            typer.echo(render_session_detail(match), nl=False)
+    else:
+        data = db.get_sessions_with_quality(limit=last, source=source)
+        if json_output:
+            typer.echo(json_mod.dumps(data, indent=2, default=str))
+        else:
+            typer.echo(render_sessions_table(data), nl=False)
+
+            from reprompt.core.suggestions import get_suggestion
+
+            hint = get_suggestion("sessions")
+            if hint:
+                console.print(f"\n  [dim]\u2192 Try: {hint}[/dim]")
+
+    if copy:
+        if detail:
+            copy_text = json_mod.dumps(match, indent=2, default=str)  # type: ignore[possibly-undefined]
+        else:
+            copy_text = json_mod.dumps(data, indent=2, default=str)  # type: ignore[possibly-undefined]
+        _copy_to_clip(copy_text, quiet=json_output)
+
+
+@app.command(rich_help_panel="Analyze")
 def agent(
     last: int = typer.Option(5, "--last", help="Analyze N most recent sessions"),
     source: str = typer.Option(

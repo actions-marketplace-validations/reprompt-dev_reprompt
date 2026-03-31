@@ -15,6 +15,9 @@ SUGGESTIONS: dict[str, str] = {
     "agent": (
         "reprompt agent --loops-only (error loops) · reprompt privacy --deep (sensitive content)"
     ),
+    "sessions": (
+        "reprompt sessions --detail <id> (deep-dive) · reprompt agent (error loop analysis)"
+    ),
     "template": "reprompt insights (see which patterns work best)",
 }
 
