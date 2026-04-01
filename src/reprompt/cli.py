@@ -982,8 +982,17 @@ def score(
                     "paper": s.paper,
                     "message": s.message,
                     "impact": s.impact,
+                    "points": s.points,
                 }
                 for s in breakdown.suggestions
+            ],
+            "confirmations": [
+                {
+                    "category": c.category,
+                    "message": c.message,
+                    "score": c.score,
+                }
+                for c in breakdown.confirmations
             ],
         }
         typer.echo(json_mod.dumps(data, indent=2))
@@ -1004,8 +1013,17 @@ def score(
                     "paper": s.paper,
                     "message": s.message,
                     "impact": s.impact,
+                    "points": s.points,
                 }
                 for s in breakdown.suggestions
+            ],
+            "confirmations": [
+                {
+                    "category": c.category,
+                    "message": c.message,
+                    "score": c.score,
+                }
+                for c in breakdown.confirmations
             ],
         }
         typer.echo(render_score(data))

@@ -325,19 +325,32 @@ def render_score(breakdown: dict[str, Any]) -> str:
     console = Console(file=buf, force_terminal=True, width=80)
 
     total = breakdown["total"]
-    grade = (
-        "Excellent"
-        if total >= 80
-        else "Good"
-        if total >= 60
-        else "Fair"
-        if total >= 40
-        else "Poor"
-        if total >= 20
-        else "Very Poor"
+    tier = (
+        "EXPERT"
+        if total >= 85
+        else "STRONG"
+        if total >= 70
+        else "GOOD"
+        if total >= 50
+        else "BASIC"
+        if total >= 30
+        else "DRAFT"
+    )
+    tier_color = (
+        "bold magenta"
+        if total >= 85
+        else "bold green"
+        if total >= 70
+        else "bold cyan"
+        if total >= 50
+        else "bold yellow"
+        if total >= 30
+        else "dim"
     )
 
-    console.print(f"\n[bold]Prompt DNA Score: {total:.0f}/100[/bold]  ({grade})")
+    console.print(
+        f"\n[bold]Score: {total:.0f}/100[/bold]  [{tier_color}]{tier}[/{tier_color}]"
+    )
     cost_info = breakdown.get("estimated_cost")
     if cost_info:
         console.print(
@@ -348,17 +361,24 @@ def render_score(breakdown: dict[str, Any]) -> str:
 
     # Category bars
     categories = [
-        ("Structure", breakdown["structure"], 25),
+        ("Clarity", breakdown["clarity"], 25),
         ("Context", breakdown["context"], 25),
         ("Position", breakdown["position"], 20),
+        ("Structure", breakdown["structure"], 15),
         ("Repetition", breakdown["repetition"], 15),
-        ("Clarity", breakdown["clarity"], 15),
     ]
     for name, cat_score, max_val in categories:
         pct = cat_score / max_val if max_val > 0 else 0
         filled = int(pct * 10)
         bar = "\u2588" * filled + "\u2591" * (10 - filled)
         console.print(f" {name:<12} {bar}  {cat_score:.0f}/{max_val}")
+
+    # Positive confirmations (what's already good)
+    confirmations = breakdown.get("confirmations", [])
+    if confirmations:
+        console.print(f"\n[bold green]Strengths ({len(confirmations)}):[/bold green]")
+        for c in confirmations:
+            console.print(f" [green]\u2713[/green] {c['message']}  [dim]({c['score']})[/dim]")
 
     # Suggestions (sorted by impact: high → medium → low)
     suggestions = breakdown.get("suggestions", [])
@@ -368,8 +388,10 @@ def render_score(breakdown: dict[str, Any]) -> str:
         console.print(f"\n[bold]Suggestions ({len(suggestions)}):[/bold]")
         for s in suggestions:
             impact_color = {"high": "red", "medium": "yellow", "low": "dim"}.get(s["impact"], "dim")
+            pts = f" [bold](+{s['points']} pts)[/bold]" if s.get("points") else ""
             console.print(
-                f" [{impact_color}]\u25a0[/{impact_color}] [dim][{s['paper']}][/dim] {s['message']}"
+                f" [{impact_color}]\u25a0[/{impact_color}] {s['message']}{pts}"
+                f"  [dim]{s['paper']}[/dim]"
             )
 
     return buf.getvalue()

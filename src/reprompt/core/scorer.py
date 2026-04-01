@@ -58,6 +58,16 @@ class Suggestion:
     paper: str  # short citation
     message: str
     impact: str  # "high", "medium", "low"
+    points: int = 0  # expected score gain if applied
+
+
+@dataclass
+class Confirmation:
+    """Positive feedback for a detected feature."""
+
+    category: str
+    message: str
+    score: str  # e.g. "20/20"
 
 
 @dataclass
@@ -74,6 +84,7 @@ class ScoreBreakdown:
     clarity: float = 0.0  # max 25
 
     suggestions: list[Suggestion] = field(default_factory=list)
+    confirmations: list[Confirmation] = field(default_factory=list)
 
 
 def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
@@ -94,6 +105,7 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
                 "Prompt Report",
                 'Add a role definition (e.g., "You are a senior Python developer")',
                 "low",
+                points=3,
             )
         )
 
@@ -106,6 +118,7 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
                 "Prompt Report",
                 'Add constraints (e.g., "Do not modify tests", "Must be backward-compatible")',
                 "medium",
+                points=5,
             )
         )
 
@@ -135,6 +148,7 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
                     "DETAIL arXiv:2512.02246",
                     "Add file path references — specificity improves output quality significantly",
                     "high",
+                    points=6,
                 )
             )
 
@@ -147,6 +161,7 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
                 "DETAIL arXiv:2512.02246",
                 "Include the actual error message — debug prompts with errors are 3.7x more effective",  # noqa: E501
                 "high",
+                points=6,
             )
         )
 
@@ -162,9 +177,9 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
             Suggestion(
                 "position",
                 "Lost in the Middle arXiv:2307.03172",
-                "Your key instruction is buried in the middle — "
-                "move it to the start or end for better attention (30% degradation in middle)",
+                "Move your key instruction to the start or end (30% degradation in middle)",
                 "high",
+                points=10,
             )
         )
 
@@ -180,9 +195,9 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
             Suggestion(
                 "repetition",
                 "Google Research arXiv:2512.14982",
-                "Repeating your core requirement at the end of the prompt "
-                "can improve accuracy by up to 76%",
+                "Repeat your core requirement at the end — can improve accuracy up to 76%",
                 "medium",
+                points=8,
             )
         )
 
@@ -199,8 +214,9 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
             Suggestion(
                 "clarity",
                 "DETAIL arXiv:2512.02246",
-                "Prompt is vague — replace pronouns ('it', 'this') with specific names",
+                "Replace pronouns ('it', 'this') with specific names",
                 "high",
+                points=4,
             )
         )
 
@@ -216,12 +232,41 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
             Suggestion(
                 "clarity",
                 "DETAIL arXiv:2512.02246",
-                "Prompt is very short — add context about what, where, and why",
+                "Add more context about what, where, and why",
                 "high",
+                points=6,
             )
         )
 
     clarity = min(clarity, 25.0)
+
+    # ── Positive confirmations ──
+    confirmations: list[Confirmation] = []
+    if pos_score >= 0.8:
+        confirmations.append(
+            Confirmation("position", "Key instruction at the start — optimal placement",
+                         f"{round(position)}/20")
+        )
+    if dna.has_file_references:
+        confirmations.append(
+            Confirmation("context", "File references detected — specificity matters",
+                         f"{round(min(context, 25))}/25")
+        )
+    if dna.has_error_messages:
+        confirmations.append(
+            Confirmation("context", "Error context included — 3.7x more effective",
+                         f"{round(min(context, 25))}/25")
+        )
+    if dna.has_constraints:
+        confirmations.append(
+            Confirmation("structure", "Constraints defined — clear boundaries set",
+                         f"{round(structure)}/15")
+        )
+    if dna.opening_quality >= 0.4:
+        confirmations.append(
+            Confirmation("clarity", "Strong opening — starts with clear intent",
+                         f"{round(clarity)}/25")
+        )
 
     # ── Total ──
     total = structure + context + position + repetition + clarity
@@ -235,4 +280,5 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
         repetition=round(repetition, 1),
         clarity=round(clarity, 1),
         suggestions=suggestions,
+        confirmations=confirmations,
     )
