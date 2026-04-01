@@ -809,6 +809,50 @@ class PromptDB:
         finally:
             conn.close()
 
+    def get_project_summary(self, source: str | None = None) -> list[dict[str, Any]]:
+        """Return per-project quality summary aggregated from session_meta.
+
+        Returns list of dicts with: project, session_count, prompt_count,
+        avg_quality, avg_efficiency, avg_focus, avg_outcome, abandonment_count,
+        escalation_count, sources, earliest, latest.
+        """
+        conn = self._conn()
+        try:
+            base_query = """
+                SELECT
+                    COALESCE(sm.project, 'unknown') as project,
+                    COUNT(DISTINCT sm.session_id) as session_count,
+                    SUM(sm.prompt_count) as prompt_count,
+                    ROUND(AVG(CASE WHEN sm.quality_score IS NOT NULL
+                        THEN sm.quality_score END), 1) as avg_quality,
+                    ROUND(AVG(CASE WHEN sm.efficiency_score IS NOT NULL
+                        THEN sm.efficiency_score END), 1) as avg_efficiency,
+                    ROUND(AVG(CASE WHEN sm.focus_score IS NOT NULL
+                        THEN sm.focus_score END), 1) as avg_focus,
+                    ROUND(AVG(CASE WHEN sm.outcome_score IS NOT NULL
+                        THEN sm.outcome_score END), 1) as avg_outcome,
+                    SUM(COALESCE(sm.has_abandonment, 0)) as abandonment_count,
+                    SUM(COALESCE(sm.has_escalation, 0)) as escalation_count,
+                    GROUP_CONCAT(DISTINCT sm.source) as sources,
+                    MIN(sm.start_time) as earliest,
+                    MAX(sm.end_time) as latest
+                FROM session_meta sm
+                WHERE sm.project IS NOT NULL AND sm.project != ''
+            """
+            if source:
+                base_query += " AND sm.source = ?"
+                rows = conn.execute(
+                    base_query + " GROUP BY sm.project ORDER BY session_count DESC",
+                    (source,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    base_query + " GROUP BY sm.project ORDER BY session_count DESC"
+                ).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
     def get_effectiveness_for_session(self, session_id: str) -> float | None:
         """Return effectiveness_score for a session, or None if not found."""
         conn = self._conn()

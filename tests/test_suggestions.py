@@ -19,6 +19,7 @@ class TestGetSuggestion:
             "template",
             "lint",
             "rewrite",
+            "projects",
         }
         assert set(SUGGESTIONS.keys()) == expected
 

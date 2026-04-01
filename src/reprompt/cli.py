@@ -2047,6 +2047,57 @@ debug-needs-reference = true
 
 
 @app.command(rich_help_panel="Analyze")
+def projects(
+    source: str = typer.Option(
+        None, "--source", "-s", help="Filter by source (e.g. claude-code, cursor)"
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
+    copy: bool = typer.Option(False, "--copy", help="Copy result to clipboard"),
+) -> None:
+    """Compare prompt quality across projects.
+
+    Shows per-project breakdown: sessions, prompts, quality scores,
+    efficiency, focus, and frustration signals.
+
+    Examples:
+
+        reprompt projects                          # all projects
+
+        reprompt projects --source claude-code      # filter by source
+
+        reprompt projects --json                   # machine-readable
+    """
+    import json as json_mod
+
+    from reprompt.config import Settings
+    from reprompt.output.projects_terminal import render_projects_table
+    from reprompt.storage.db import PromptDB
+
+    settings = Settings()
+    db = PromptDB(settings.db_path)
+
+    project_data = db.get_project_summary(source=source)
+
+    if json_output:
+        print(json_mod.dumps(project_data, indent=2, default=str))
+    else:
+        output = render_projects_table(project_data)
+        print(output)
+
+    if copy:
+        if json_output:
+            _copy_to_clip(json_mod.dumps(project_data, indent=2, default=str), quiet=True)
+        else:
+            _copy_to_clip(output)
+
+    from reprompt.core.suggestions import get_suggestion
+
+    hint = get_suggestion("projects")
+    if hint and not json_output:
+        console.print(f"  [dim]→ Try: {hint}[/dim]\n")
+
+
+@app.command(rich_help_panel="Analyze")
 def sessions(
     last: int = typer.Option(10, "--last", help="Show N most recent sessions"),
     source: str = typer.Option(
