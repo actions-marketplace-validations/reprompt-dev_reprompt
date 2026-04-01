@@ -185,7 +185,7 @@ Captured prompts sync locally via Native Messaging -- nothing leaves your machin
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/reprompt-dev/reprompt
-    rev: v2.2.0
+    rev: v2.2.1
     hooks:
       - id: reprompt-lint
 ```

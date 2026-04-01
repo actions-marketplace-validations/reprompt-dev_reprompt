@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.1] - 2026-04-01
+
+### Added
+- **MCP server expanded** — 6→9 tools: `check_prompt_quality` (unified diagnostic), `build_prompt_from_parts` (prompt constructor), `explain_prompt_quality` (educational analysis). IDE integration now covers all prompt quality features.
+- **File input** — all prompt commands (`check`, `score`, `explain`, `rewrite`, `compress`) accept `--file` to read from file and `-` for stdin. Enables pipeline integration and multi-line prompts.
+- Tests: 1846 → 1864
+
 ## [2.2.0] - 2026-04-01
 
 ### Added
