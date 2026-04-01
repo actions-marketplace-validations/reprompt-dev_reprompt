@@ -1,4 +1,4 @@
-"""MCP server for reprompt — exposes prompt analytics as 6 focused tools.
+"""MCP server for reprompt — exposes prompt analytics as 9 focused tools.
 
 Usage:
     python -m reprompt.mcp          # stdio transport (default)
@@ -294,6 +294,133 @@ def scan_sessions(source: str | None = None) -> str:
         )
     except Exception as exc:
         logger.debug("scan_sessions error: %s", exc)
+        return json.dumps({"error": str(exc)})
+
+
+@mcp.tool
+def check_prompt_quality(text: str, model: str | None = None) -> str:
+    """Full prompt diagnostic — score + lint + rewrite in one call.
+
+    Returns score breakdown, strengths, suggestions with point values,
+    lint issues, and an auto-rewritten version. The most comprehensive
+    single-call analysis available.
+
+    Args:
+        text: The prompt text to analyze
+        model: Target model for model-specific lint (claude/gpt/gemini). Optional.
+    """
+    try:
+        from reprompt.core.check import check_prompt as _check
+
+        result = _check(text, model=model or "")
+        return json.dumps(
+            {
+                "total": result.total,
+                "tier": result.tier,
+                "clarity": result.clarity,
+                "context": result.context,
+                "position": result.position,
+                "structure": result.structure,
+                "repetition": result.repetition,
+                "word_count": result.word_count,
+                "token_count": result.token_count,
+                "confirmations": result.confirmations[:3],
+                "suggestions": result.suggestions[:3],
+                "lint_issues": result.lint_issues,
+                "rewritten": result.rewritten,
+                "rewrite_delta": result.rewrite_delta,
+                "rewrite_changes": result.rewrite_changes,
+            },
+            indent=2,
+        )
+    except Exception as exc:
+        logger.debug("check_prompt_quality error: %s", exc)
+        return json.dumps({"error": str(exc)})
+
+
+@mcp.tool
+def build_prompt_from_parts(
+    task: str,
+    context: str = "",
+    files: str = "",
+    error: str = "",
+    constraints: str = "",
+    role: str = "",
+    model: str = "",
+) -> str:
+    """Build a well-structured prompt from components.
+
+    Assembles a prompt that maximizes quality score from individual parts.
+    Model-aware: uses XML tags for Claude, markdown for GPT.
+
+    Args:
+        task: What the AI should do (required)
+        context: Background information
+        files: Comma-separated file paths (e.g., "src/auth.ts,src/token.ts")
+        error: Error message or stack trace
+        constraints: Comma-separated constraints (e.g., "keep tests,no breaking changes")
+        role: AI role/persona (e.g., "senior backend engineer")
+        model: Target model (claude/gpt/gemini) for format optimization
+    """
+    try:
+        from reprompt.core.build import build_prompt as _build
+
+        file_list = [f.strip() for f in files.split(",") if f.strip()] if files else None
+        constraint_list = (
+            [c.strip() for c in constraints.split(",") if c.strip()] if constraints else None
+        )
+
+        result = _build(
+            task,
+            context=context,
+            files=file_list,
+            error=error,
+            constraints=constraint_list,
+            role=role,
+            model=model,
+        )
+        return json.dumps(
+            {
+                "prompt": result.prompt,
+                "score": result.score,
+                "tier": result.tier,
+                "components_used": result.components_used,
+                "suggestions": result.suggestions,
+            },
+            indent=2,
+        )
+    except Exception as exc:
+        logger.debug("build_prompt_from_parts error: %s", exc)
+        return json.dumps({"error": str(exc)})
+
+
+@mcp.tool
+def explain_prompt_quality(text: str) -> str:
+    """Explain what makes a prompt good or bad in plain English.
+
+    Returns educational feedback: what's working, what's missing,
+    and specific tips to improve. No LLM needed.
+
+    Args:
+        text: The prompt text to explain
+    """
+    try:
+        from reprompt.core.explain import explain_prompt as _explain
+
+        result = _explain(text)
+        return json.dumps(
+            {
+                "score": result.score,
+                "tier": result.tier,
+                "summary": result.summary,
+                "strengths": result.strengths,
+                "weaknesses": result.weaknesses,
+                "tips": result.tips,
+            },
+            indent=2,
+        )
+    except Exception as exc:
+        logger.debug("explain_prompt_quality error: %s", exc)
         return json.dumps({"error": str(exc)})
 
 

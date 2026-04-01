@@ -170,11 +170,78 @@ def test_mcp_serve_cli(tmp_path, monkeypatch):
 
 
 def test_tool_count():
-    """Verify the MCP server exposes exactly 6 tools."""
+    """Verify the MCP server exposes exactly 9 tools."""
     import asyncio
 
     from reprompt.mcp import mcp as _mcp
 
     tools = asyncio.run(_mcp.list_tools())
     names = [t.name for t in tools]
-    assert len(tools) == 6, f"Expected 6 tools, got {len(tools)}: {names}"
+    assert len(tools) == 9, f"Expected 9 tools, got {len(tools)}: {names}"
+
+
+# ─── New tools (check, build, explain) ────────────────────────────────────
+
+
+def test_check_prompt_quality():
+    from reprompt.mcp import check_prompt_quality
+
+    result = json.loads(check_prompt_quality("fix the auth bug in login.ts"))
+    assert "total" in result
+    assert "tier" in result
+    assert "lint_issues" in result
+    assert "rewritten" in result
+    assert "suggestions" in result
+
+
+def test_check_prompt_quality_with_model():
+    from reprompt.mcp import check_prompt_quality
+
+    result = json.loads(check_prompt_quality("fix the auth bug", model="claude"))
+    assert "total" in result
+
+
+def test_build_prompt_from_parts():
+    from reprompt.mcp import build_prompt_from_parts
+
+    result = json.loads(
+        build_prompt_from_parts(
+            task="fix the auth bug",
+            files="src/auth.ts",
+            error="TypeError: null",
+            constraints="keep tests,no breaking changes",
+        )
+    )
+    assert "prompt" in result
+    assert "score" in result
+    assert "tier" in result
+    assert "src/auth.ts" in result["prompt"]
+    assert "components_used" in result
+
+
+def test_build_prompt_from_parts_minimal():
+    from reprompt.mcp import build_prompt_from_parts
+
+    result = json.loads(build_prompt_from_parts(task="fix the bug"))
+    assert "prompt" in result
+    assert result["score"] > 0
+
+
+def test_explain_prompt_quality():
+    from reprompt.mcp import explain_prompt_quality
+
+    result = json.loads(explain_prompt_quality("fix the auth bug in login.ts"))
+    assert "score" in result
+    assert "tier" in result
+    assert "summary" in result
+    assert "strengths" in result
+    assert "weaknesses" in result
+    assert "tips" in result
+
+
+def test_explain_prompt_quality_short():
+    from reprompt.mcp import explain_prompt_quality
+
+    result = json.loads(explain_prompt_quality("fix it"))
+    assert result["score"] > 0
+    assert len(result["summary"]) > 0
