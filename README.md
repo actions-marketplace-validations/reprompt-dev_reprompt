@@ -66,6 +66,7 @@ $ reprompt
 | `reprompt agent` | Agent workflow analysis -- error loops, tool patterns, session efficiency |
 | `reprompt sessions` | Session quality scores with frustration signal detection |
 | `reprompt repetition` | Cross-session repetition detection -- spot recurring prompts |
+| `reprompt projects` | Per-project quality breakdown -- sessions, scores, frustration signals |
 
 ### Optimize
 
@@ -155,7 +156,7 @@ reprompt install-hook               # adds post-session hook to Claude Code
 
 ### Browser extension
 
-Capture prompts from ChatGPT, Claude.ai, and Gemini directly in your browser:
+Capture prompts from ChatGPT, Claude.ai, and Gemini directly in your browser. Live score badge shows prompt quality as you type.
 
 1. **Install the extension** from [Chrome Web Store](https://chromewebstore.google.com/detail/reprompt/ojdccpagaanchmkninlbgbgemdcjckhn) or [Firefox Add-ons](https://addons.mozilla.org/addon/reprompt-cli/)
 2. **Connect to the CLI:** `reprompt install-extension`
@@ -182,7 +183,7 @@ Captured prompts sync locally via Native Messaging -- nothing leaves your machin
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/reprompt-dev/reprompt
-    rev: v1.7.0
+    rev: v2.0.1
     hooks:
       - id: reprompt-lint
 ```

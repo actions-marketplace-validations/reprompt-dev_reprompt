@@ -2,6 +2,83 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - 2026-03-31
+
+### Added
+- **Project-level quality comparison** — `reprompt projects` aggregates session quality, efficiency, focus scores, and frustration signals per project. Supports `--source` filter, `--json`, `--copy`.
+- Tests: 1670 → 1716
+
+## [2.0.0] - 2026-03-31
+
+### Changed
+- **Major version bump** — the rewrite engine marks the shift from passive analysis (v1.x) to active prompt coaching (v2.0). reprompt now scores, rewrites, and optimizes your AI prompts automatically.
+
+## [1.10.0] - 2026-03-31
+
+### Added
+- **Prompt rewrite engine** — `reprompt rewrite "prompt"` applies 4 rule-based transformations: filler removal (reuses compress engine), instruction front-loading (Stanford position bias), key requirement echo (Google repetition research), hedging cleanup (12 regex patterns). Shows before/after score delta and manual suggestions. No LLM needed, under 50ms.
+- **`reprompt init` command** — generates `.reprompt.toml` config with all lint rules documented and commented defaults. `--force` to overwrite existing.
+- Tests: 1597 → 1670
+
+## [1.9.1] - 2026-03-31
+
+### Added
+- **Configurable lint rules** — `.reprompt.toml` or `[tool.reprompt.lint]` in `pyproject.toml`. Supports `score-threshold`, `min-length`, `short-prompt`, `vague-prompt`, `debug-needs-reference`, `file-extensions`. Config walks up from CWD. CLI flags override file config.
+- Tests: 1567 → 1597
+
+## [1.9.0] - 2026-03-31
+
+### Added
+- **Bidirectional bridge** — Native Messaging `sync_result` now returns insights (avg score, score trend, top coaching tip) back to the browser extension. New `get_insights` message type for full analysis including repetition data and pattern info.
+- `get_recent_scores(limit)` DB method for trend computation.
+- Tests: 1545 → 1567
+
+## [1.8.1] - 2026-03-31
+
+### Added
+- **Cross-session repetition detection** — `reprompt repetition` detects recurring prompts across different AI sessions using TF-IDF + containment clustering (threshold 0.75). Shows repetition rate, recurring topics ranked by session count, and date ranges. Integrated into `reprompt insights` output.
+- Tests: 1529 → 1545
+
+## [1.8.0] - 2026-03-31
+
+### Added
+- **Session quality metrics** — `reprompt sessions` provides composite 0-100 session scoring combining prompt quality, efficiency, focus, and outcome. Frustration signal detection: abandonment, escalation, stall turns. Rich table and detail views.
+
+### Fixed
+- **Pipeline type mismatch** — `parse_conversation()` returns `list[ConversationTurn]`, not `Conversation`. Pipeline now wraps turns correctly. Without this fix, session quality scoring silently failed.
+- **Bridge shell injection** — quoted `sys.executable` in bridge wrapper script to prevent command injection when Python path contains spaces.
+- **Unclamped scores** — efficiency and focus component scores now clamped to 0-100 range.
+- Tests: 1497 → 1529
+
+## [1.7.1] - 2026-03-29
+
+### Added
+- **Expanded privacy scanner** — 10 new detection patterns: SSH private keys (RSA/EC/DSA/OPENSSH/PKCS#8), PEM certificates, service tokens (Slack bot/user/app, Google API, npm), database connection strings (PostgreSQL, MySQL, MongoDB, Redis). 28 new tests. Closes #12.
+
+## [1.7.0] - 2026-03-28
+
+### Added
+- **GitHub Action PR comments** — `comment-on-pr: true` posts quality report as PR comment with markdown table, collapsible violations, and score summary. Updates existing comment on re-push (no duplicates).
+- **Token cost estimation** — `reprompt score` shows ~tokens and $cost. `reprompt insights` shows total prompt cost. `reprompt report` overview includes estimated cost. MCP `score_prompt` includes token count and cost.
+- Locale-aware token counting: 1.3x words (EN), 1.5x chars (CJK).
+- Price table: Claude Sonnet/Opus/Haiku, GPT-4o/mini, Gemini, DeepSeek. Auto-detect model from adapter source.
+- Tests: 1497 → 1529
+
+## [1.6.2] - 2026-03-28
+
+### Fixed
+- **Security: shell injection in GitHub Action** — inputs now passed via env vars, not string interpolation.
+- **Bridge: 1MB message limit** — enforce Chrome Native Messaging size limit with proper JSON decode error handling.
+
+### Improved
+- SQLite WAL mode + 10s timeout for concurrent access safety.
+- MCP: all 6 tools wrapped in try/except with structured error responses; `check_privacy` uses SQL LIMIT.
+- Dedup: skip O(n²) semantic layer when batch > 5000 prompts.
+- ChatGPT adapter: warn on files > 200MB.
+- First-run dashboard shows "Found N sessions (~M turns) across K tools".
+- `purge --all` now requires confirmation.
+- MCP server consolidated from 10 to 6 focused tools.
+
 ## [1.6.1] - 2026-03-28
 
 ### Fixed
