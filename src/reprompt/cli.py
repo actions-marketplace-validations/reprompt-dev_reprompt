@@ -1935,6 +1935,65 @@ def extension_status() -> None:
         console.print("  Last sync:         never")
 
 
+@app.command(rich_help_panel="Setup")
+def init(
+    force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing config"),
+) -> None:
+    """Generate a .reprompt.toml config file in the current directory.
+
+    Creates a starter config with all lint rules documented and commented.
+    Use this to customize reprompt for your project or CI pipeline.
+
+    Examples:
+
+        reprompt init                     # create .reprompt.toml
+
+        reprompt init --force             # overwrite existing config
+    """
+    config_path = Path.cwd() / ".reprompt.toml"
+
+    if config_path.exists() and not force:
+        console.print(
+            f"[yellow]{config_path.name} already exists.[/yellow]"
+            " Use [bold]--force[/bold] to overwrite."
+        )
+        raise typer.Exit(1)
+
+    config_content = """\
+# reprompt configuration
+# Docs: https://github.com/reprompt-dev/reprompt
+#
+# This file configures `reprompt lint` rules and CI thresholds.
+# Place in your project root — reprompt walks up from CWD to find it.
+# Alternatively, add [tool.reprompt.lint] to pyproject.toml.
+
+[lint]
+# Fail `reprompt lint` if average prompt score < threshold (0 = disabled)
+# Useful for CI: reprompt lint --score-threshold reads this value
+# score-threshold = 50
+
+[lint.rules]
+# min-length: error if prompt < N chars (0 = disabled)
+min-length = 20
+
+# short-prompt: warning if prompt < N chars (0 = disabled)
+short-prompt = 40
+
+# vague-prompt: error on vague prompts like "fix it" (false = disabled)
+vague-prompt = true
+
+# debug-needs-reference: warning if debug prompt lacks file reference (false = disabled)
+debug-needs-reference = true
+
+# file-extensions: extensions recognized as file references
+# file-extensions = [".py", ".ts", ".js", ".go", ".rs", ".java", ".rb", ".cpp", ".c"]
+"""
+
+    config_path.write_text(config_content)
+    console.print(f"[green]Created[/green] {config_path.name}")
+    console.print("  Edit rules, then run [bold]reprompt lint[/bold] to verify.")
+
+
 @app.command(rich_help_panel="Analyze")
 def sessions(
     last: int = typer.Option(10, "--last", help="Show N most recent sessions"),

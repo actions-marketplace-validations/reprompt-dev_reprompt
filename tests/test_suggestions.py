@@ -17,6 +17,7 @@ class TestGetSuggestion:
             "sessions",
             "repetition",
             "template",
+            "lint",
         }
         assert set(SUGGESTIONS.keys()) == expected
 

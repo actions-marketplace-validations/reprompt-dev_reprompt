@@ -22,6 +22,7 @@ SUGGESTIONS: dict[str, str] = {
         'reprompt template save "..." (reuse patterns) · reprompt insights (all patterns)'
     ),
     "template": "reprompt insights (see which patterns work best)",
+    "lint": "reprompt init (generate .reprompt.toml) · reprompt score (instant scoring)",
 }
 
 
