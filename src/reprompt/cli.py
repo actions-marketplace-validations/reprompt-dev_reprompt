@@ -15,6 +15,21 @@ if TYPE_CHECKING:
     from reprompt.storage.db import PromptDB
 
 
+def _resolve_text(text: str, file: str) -> str:
+    """Resolve prompt text from argument or --file option."""
+    if file:
+        p = Path(file)
+        if not p.is_file():
+            typer.echo(f"Error: file not found: {file}", err=True)
+            raise typer.Exit(1)
+        return p.read_text(encoding="utf-8").strip()
+    if text == "-":
+        import sys
+
+        return sys.stdin.read().strip()
+    return text
+
+
 def _copy_to_clip(text: str, quiet: bool = False) -> None:
     """Copy text to clipboard with user feedback."""
     from reprompt.sharing.clipboard import copy_to_clipboard
@@ -948,9 +963,10 @@ def lint(
 
 @app.command(rich_help_panel="Analyze")
 def check(
-    text: str = typer.Argument(..., help="Prompt text to check"),
+    text: str = typer.Argument(..., help="Prompt text to check (use '-' for stdin)"),
     model: str = typer.Option("", "--model", "-m", help="Target model (claude/gpt/gemini)"),
     max_tokens: int = typer.Option(0, "--max-tokens", help="Token budget (0 = disabled)"),
+    file: str = typer.Option("", "--file", "-f", help="Read prompt from file"),
     json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
     copy: bool = typer.Option(False, "--copy", help="Copy rewritten prompt to clipboard"),
 ) -> None:
@@ -967,6 +983,7 @@ def check(
 
         reprompt check "help me debug this crash" --json
     """
+    text = _resolve_text(text, file)
     from reprompt.core.check import check_prompt
 
     result = check_prompt(text, model=model, max_tokens=max_tokens)
@@ -1009,7 +1026,8 @@ def check(
 
 @app.command(rich_help_panel="Analyze")
 def explain(
-    text: str = typer.Argument(..., help="Prompt text to explain"),
+    text: str = typer.Argument(..., help="Prompt text to explain (use '-' for stdin)"),
+    file: str = typer.Option("", "--file", "-f", help="Read prompt from file"),
     json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
 ) -> None:
     """Explain what makes a prompt good or bad in plain English.
@@ -1021,8 +1039,9 @@ def explain(
 
         reprompt explain "fix the auth bug"
 
-        reprompt explain "Fix the JWT expiration in src/auth.ts line 42" --json
+        reprompt explain --file prompt.txt --json
     """
+    text = _resolve_text(text, file)
     from reprompt.core.explain import explain_prompt
 
     result = explain_prompt(text)
@@ -1053,7 +1072,8 @@ def explain(
 
 @app.command(rich_help_panel="Analyze")
 def score(
-    text: str = typer.Argument(..., help="Prompt text to score"),
+    text: str = typer.Argument(..., help="Prompt text to score (use '-' for stdin)"),
+    file: str = typer.Option("", "--file", "-f", help="Read prompt from file"),
     json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
     copy: bool = typer.Option(False, "--copy", help="Copy result to clipboard"),
 ) -> None:
@@ -1063,10 +1083,11 @@ def score(
 
         reprompt score "Fix the auth bug in login.ts where JWT expires"
 
-        reprompt score "Refactor auth module to use refresh tokens" --json
+        reprompt score --file prompt.txt --json
 
         reprompt score "Fix bug" --copy
     """
+    text = _resolve_text(text, file)
     from reprompt.core.cost import estimate_cost, format_cost, model_for_source
     from reprompt.core.extractors import extract_features
     from reprompt.core.scorer import score_prompt
@@ -1174,7 +1195,8 @@ def score(
 
 @app.command(rich_help_panel="Optimize")
 def compress(
-    text: str = typer.Argument(..., help="Prompt text to compress"),
+    text: str = typer.Argument(..., help="Prompt text to compress (use '-' for stdin)"),
+    file: str = typer.Option("", "--file", "-f", help="Read prompt from file"),
     json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
     copy: bool = typer.Option(False, "--copy", help="Copy compressed text to clipboard"),
 ) -> None:
@@ -1184,10 +1206,11 @@ def compress(
 
         reprompt compress "Can you please help me refactor this code?"
 
-        reprompt compress "I was wondering if you could fix the bug" --json
+        reprompt compress --file prompt.txt --json
 
         reprompt compress "verbose prompt here" --copy
     """
+    text = _resolve_text(text, file)
     from reprompt.core.compress import compress_text
 
     result = compress_text(text)
@@ -1208,7 +1231,8 @@ def compress(
 
 @app.command(rich_help_panel="Optimize")
 def rewrite(
-    text: str = typer.Argument(..., help="Prompt text to improve"),
+    text: str = typer.Argument(..., help="Prompt text to improve (use '-' for stdin)"),
+    file: str = typer.Option("", "--file", "-f", help="Read prompt from file"),
     json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
     diff: bool = typer.Option(False, "--diff", help="Show unified diff (red/green)"),
     copy: bool = typer.Option(False, "--copy", help="Copy rewritten text to clipboard"),
@@ -1223,10 +1247,11 @@ def rewrite(
 
         reprompt rewrite "I was wondering if you could fix the authentication bug"
 
-        reprompt rewrite "fix the login" --diff
+        reprompt rewrite --file prompt.txt --diff
 
         reprompt rewrite "please help me refactor this code to be better" --copy
     """
+    text = _resolve_text(text, file)
     from reprompt.core.rewrite import rewrite_prompt
 
     result = rewrite_prompt(text)
