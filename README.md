@@ -69,6 +69,7 @@ $ reprompt check "Fix the auth bug in src/login.ts where JWT expires"
 | `reprompt agent` | Agent workflow analysis -- error loops, tool patterns, session efficiency |
 | `reprompt sessions` | Session quality scores with frustration signal detection |
 | `reprompt repetition` | Cross-session repetition detection -- spot recurring prompts |
+| `reprompt patterns` | **Personal prompt weaknesses** -- recurring gaps by task type |
 | `reprompt projects` | Per-project quality breakdown -- sessions, scores, frustration signals |
 
 ### Optimize
@@ -165,7 +166,7 @@ reprompt install-hook               # adds post-session hook to Claude Code
 
 ### Browser extension
 
-Capture prompts from ChatGPT, Claude.ai, and Gemini directly in your browser. Live score badge shows prompt quality as you type.
+Capture prompts from ChatGPT, Claude.ai, and Gemini directly in your browser. Live score badge shows prompt quality as you type — click "Rewrite & Apply" to improve your prompt and replace the text directly in the input box.
 
 1. **Install the extension** from [Chrome Web Store](https://chromewebstore.google.com/detail/reprompt/ojdccpagaanchmkninlbgbgemdcjckhn) or [Firefox Add-ons](https://addons.mozilla.org/addon/reprompt-cli/)
 2. **Connect to the CLI:** `reprompt install-extension`
@@ -179,12 +180,39 @@ Captured prompts sync locally via Native Messaging -- nothing leaves your machin
 
 ```yaml
 # .github/workflows/prompt-lint.yml
-- uses: reprompt-dev/reprompt@main
-  with:
-    score-threshold: 50   # fail if avg prompt score < 50
-    strict: true          # fail on warnings too
-    comment-on-pr: true   # post quality report as PR comment
+name: Prompt Quality
+on: pull_request
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write    # needed for PR comments
+    steps:
+      - uses: actions/checkout@v4
+      - uses: reprompt-dev/reprompt@main
+        with:
+          score-threshold: 50   # fail if avg prompt score < 50
+          strict: true          # fail on warnings too
+          comment-on-pr: true   # post quality report as PR comment
 ```
+
+When `comment-on-pr: true`, every PR gets a quality report:
+
+```
+## reprompt lint 🟢 Passed
+
+| Metric          | Value          |
+|-----------------|----------------|
+| Prompts checked | 12             |
+| Errors          | 0              |
+| Warnings        | 2              |
+| Avg Score       | 62/100 ✅ (threshold: 50) |
+
+📋 2 violation(s) [click to expand]
+```
+
+The comment updates on each push — no duplicates. Uses `GITHUB_TOKEN` (no extra secrets needed).
 
 #### pre-commit
 
