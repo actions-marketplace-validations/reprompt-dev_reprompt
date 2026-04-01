@@ -964,6 +964,23 @@ class PromptDB:
         finally:
             conn.close()
 
+    def get_recent_scores(self, limit: int = 50) -> list[float]:
+        """Return recent prompt scores ordered by timestamp (newest first)."""
+        conn = self._conn()
+        try:
+            rows = conn.execute(
+                """SELECT pf.overall_score
+                   FROM prompt_features pf
+                   JOIN prompts p ON pf.prompt_hash = p.hash
+                   WHERE pf.overall_score IS NOT NULL
+                   ORDER BY p.timestamp DESC
+                   LIMIT ?""",
+                (limit,),
+            ).fetchall()
+            return [r["overall_score"] for r in rows]
+        finally:
+            conn.close()
+
     def get_all_features(self, source: str | None = None) -> list[dict[str, Any]]:
         """Return all stored feature vectors, optionally filtered by source."""
         conn = self._conn()

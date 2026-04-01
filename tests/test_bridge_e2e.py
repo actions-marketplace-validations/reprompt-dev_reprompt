@@ -129,25 +129,25 @@ class TestExtensionE2EPipeline:
         # Verify ping
         assert responses[0]["type"] == "pong"
 
-        # Verify sync results
-        assert responses[1] == {
-            "type": "sync_result",
-            "received": 2,
-            "new_stored": 2,
-            "duplicates": 0,
-        }
-        assert responses[2] == {
-            "type": "sync_result",
-            "received": 1,
-            "new_stored": 1,
-            "duplicates": 0,
-        }
-        assert responses[3] == {
-            "type": "sync_result",
-            "received": 1,
-            "new_stored": 1,
-            "duplicates": 0,
-        }
+        # Verify sync results (check core fields; insights key added in v1.9)
+        r1 = responses[1]
+        assert r1["type"] == "sync_result"
+        assert r1["received"] == 2
+        assert r1["new_stored"] == 2
+        assert r1["duplicates"] == 0
+        assert "insights" in r1
+
+        r2 = responses[2]
+        assert r2["type"] == "sync_result"
+        assert r2["received"] == 1
+        assert r2["new_stored"] == 1
+        assert r2["duplicates"] == 0
+
+        r3 = responses[3]
+        assert r3["type"] == "sync_result"
+        assert r3["received"] == 1
+        assert r3["new_stored"] == 1
+        assert r3["duplicates"] == 0
 
         # Verify status shows all 4 prompts
         assert responses[4]["type"] == "status"
