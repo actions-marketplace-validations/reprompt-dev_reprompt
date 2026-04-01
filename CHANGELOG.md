@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-04-01
+
+### Added
+- **Model-specific lint rules** — `reprompt lint --model claude/gpt/gemini` checks prompts against model-specific best practices. 8 rules: XML tag preference (Claude), markdown structure (GPT), JSON instruction requirements (GPT), CoT anti-pattern for o-series (GPT), prompt length limits (Gemini), broad negative detection (Gemini). Based on official model documentation.
+- **Diff preview for rewrite** — `reprompt rewrite --diff` shows a git-style unified diff between original and rewritten prompt. Color-coded: red removals, green additions, cyan range markers.
+- **Token budget lint** — `reprompt lint --max-tokens 4096` warns when prompts exceed a token budget. Configurable via `.reprompt.toml` (`max-tokens`) or CLI flag. Uses locale-aware token estimation from cost module.
+- Tests: 1716 → 1741
+
+## [2.0.2] - 2026-04-01
+
+### Changed
+- **Scoring rebalance** — Structure weight reduced 25→15, Clarity increased 15→25. Plain-text prompts now score 55-65 instead of 35-45. Real-world conversational prompts are no longer penalized for lacking markdown structure.
+- **Tier labels** — Scores display as EXPERT (85+), STRONG (70+), GOOD (50+), BASIC (30+), DRAFT (<30) instead of raw numbers. Applied across CLI, extension badge, popup, and HTML dashboard.
+- **Positive UX feedback** — Score output now includes "Strengths" section showing what the prompt does well. Suggestions show expected point gain (`+N pts`). Badge color thresholds adjusted: 85/60/40/25.
+
 ## [2.0.1] - 2026-03-31
 
 ### Added
