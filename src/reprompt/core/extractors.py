@@ -362,13 +362,11 @@ def _find_instruction_position(segments: list[PromptSegment]) -> float:
         # No instruction found -- default to start (assume the whole thing is instruction)
         return 0.0
 
-    # Single-segment prompt: the instruction starts at the beginning
-    if len(segments) == 1 and instruction_segments[0] is segments[0]:
-        return 0.0
-
-    # Multi-segment: use the midpoint of the first instruction segment
+    # Use the start position of the first instruction segment.
+    # Not the midpoint — the instruction *starts* at start_pos,
+    # and that's what matters for the Lost in the Middle effect.
     seg = instruction_segments[0]
-    return (seg.start_pos + seg.end_pos) / 2
+    return seg.start_pos
 
 
 def _classify_distribution(segments: list[PromptSegment]) -> str:
