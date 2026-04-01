@@ -209,6 +209,11 @@ def _apply_task_scaffold(text: str, dna: object) -> str:
     Only fires when the prompt is short (<30 words) AND missing critical
     context for the detected task type. Adds fill-in-the-blank lines so
     the user knows what to add — not generic advice, but structured slots.
+
+    Slot design informed by:
+    - fabric patterns (danielmiessler/fabric, 40k stars): IDENTITY/STEPS/OUTPUT
+    - steipete/agent-rules (5.6k stars): bug-fix, analyze-issue, pr-review
+    - awesome-cursorrules (38k stars): framework-specific conventions
     """
     task = getattr(dna, "task_type", "other")
     word_count = getattr(dna, "word_count", 0)
@@ -220,12 +225,13 @@ def _apply_task_scaffold(text: str, dna: object) -> str:
     missing: list[str] = []
 
     if task == "debug":
+        # steipete/agent-rules: bug-fix requires reproduce + expected vs actual
         if not getattr(dna, "has_error_messages", False):
             missing.append("Error: <paste the error message or stack trace>")
         if not getattr(dna, "has_file_references", False):
             missing.append("File: <which file and function>")
-        if not getattr(dna, "has_code_blocks", False):
-            missing.append("Code: <paste the relevant code block>")
+        # Expected vs actual is the most diagnostic slot (from bug-fix.mdc)
+        missing.append("Expected: <what should happen vs what actually happens>")
 
     elif task == "implement":
         if not getattr(dna, "has_io_spec", False):
@@ -240,6 +246,8 @@ def _apply_task_scaffold(text: str, dna: object) -> str:
             missing.append("Scope: <which files/modules to touch>")
         if not getattr(dna, "has_constraints", False):
             missing.append("Preserve: <what must NOT change (API, tests, etc.)>")
+        # fabric/awesome-cursorrules: refactors benefit from target pattern
+        missing.append("Goal: <readability, performance, or pattern to apply>")
 
     elif task == "test":
         if not getattr(dna, "has_file_references", False):
@@ -250,8 +258,12 @@ def _apply_task_scaffold(text: str, dna: object) -> str:
             missing.append("Expected: <what the correct behavior should be>")
 
     elif task == "review":
+        # fabric review_code: 6 named axes instead of generic "focus"
         if not getattr(dna, "has_constraints", False):
-            missing.append("Focus: <security, performance, error handling, etc.>")
+            missing.append(
+                "Review axes: <correctness, security, performance, "
+                "readability, error handling>"
+            )
         if not getattr(dna, "has_file_references", False):
             missing.append("Scope: <which files or PR to review>")
 
