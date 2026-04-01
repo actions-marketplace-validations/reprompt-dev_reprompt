@@ -11,6 +11,8 @@ Research basis:
 - Stanford 2307.03172: Lost in the Middle positional effects
 - EMNLP 2023 SPELL: prompt perplexity as quality signal
 - The Prompt Report 2406.06608: prompting technique taxonomy
+- Zi+ 2508.03678: specificity drivers (I/O specs, edge cases)
+- PEEM 2603.10477: independent prompt quality measurement
 """
 
 from __future__ import annotations
@@ -52,6 +54,10 @@ class PromptDNA:
     file_reference_count: int = 0
     has_error_messages: bool = False
     context_specificity: float = 0.0
+
+    # ── Specificity Drivers [Zi+ 2508.03678, PartialOrderEval] ──
+    has_io_spec: bool = False  # explicit input/output specifications
+    has_edge_cases: bool = False  # boundary/edge case mentions
 
     # ── Research-backed Scores ──
     # [Google Research 2512.14982] Repetition

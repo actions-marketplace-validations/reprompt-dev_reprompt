@@ -218,4 +218,14 @@ def _generate_manual_suggestions(dna: object) -> list[str]:
     if not getattr(dna, "has_examples", True):
         suggestions.append("Add an example of expected input/output")
 
+    if not getattr(dna, "has_io_spec", True):
+        task = getattr(dna, "task_type", "")
+        if task in ("implement", "test"):
+            suggestions.append("Specify expected input/output behavior")
+
+    if not getattr(dna, "has_edge_cases", True):
+        task = getattr(dna, "task_type", "")
+        if task in ("implement", "test"):
+            suggestions.append("Mention edge cases (empty input, null, zero)")
+
     return suggestions

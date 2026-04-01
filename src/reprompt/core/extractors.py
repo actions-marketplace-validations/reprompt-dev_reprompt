@@ -57,6 +57,20 @@ _STEP_BY_STEP_RE = re.compile(
 _SECTION_RE = re.compile(r"^#{1,4}\s+\S", re.MULTILINE)
 _SENTENCE_RE = re.compile(r"[.!?]+(?:\s|$)")
 
+# [Zi+ 2508.03678] Specificity drivers from PartialOrderEval
+_IO_SPEC_RE = re.compile(
+    r"(?i)(?:input\s*:|output\s*:|expected\s*(?:output|result|behavior)\s*:|returns?\s*:|"
+    r"given\s*:|should\s+(?:return|output|produce|print|yield)\b|"
+    r"takes?\s+(?:a|an|the)?\s*\w+\s+(?:and|,)\s*returns?\b)"
+)
+_EDGE_CASE_RE = re.compile(
+    r"(?i)(?:edge\s*case|corner\s*case|boundary|"
+    r"(?:empty|null|nil|none|zero|negative|invalid|missing|undefined)\s+"
+    r"(?:input|value|string|list|array|param|argument)|"
+    r"(?:what\s+(?:if|happens?\s+when)\s+.*(?:empty|null|zero|no\s+\w+))|"
+    r"handle\s+(?:empty|null|invalid|missing|error))"
+)
+
 _VAGUE_WORDS = frozenset(
     {
         "something",
@@ -155,6 +169,10 @@ def extract_features(
     # -- Error messages --
     has_error_messages = bool(_ERROR_RE.search(stripped))
 
+    # -- Specificity drivers [Zi+ 2508.03678] --
+    has_io_spec = bool(_IO_SPEC_RE.search(stripped))
+    has_edge_cases = bool(_EDGE_CASE_RE.search(stripped))
+
     # -- Research: Keyword repetition [Google 2512.14982] --
     keyword_repetition_freq, instruction_repetition = _compute_repetition(words)
 
@@ -201,6 +219,8 @@ def extract_features(
         has_file_references=has_file_references,
         file_reference_count=file_reference_count,
         has_error_messages=has_error_messages,
+        has_io_spec=has_io_spec,
+        has_edge_cases=has_edge_cases,
         context_specificity=round(context_specificity, 4),
         keyword_repetition_freq=round(keyword_repetition_freq, 4),
         instruction_repetition=instruction_repetition,

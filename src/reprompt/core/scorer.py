@@ -165,6 +165,22 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
             )
         )
 
+    # [Zi+ 2508.03678] Specificity drivers from PartialOrderEval
+    if dna.has_io_spec:
+        context += 3.0
+    if dna.has_edge_cases:
+        context += 2.0
+    elif dna.task_type in ("implement", "test"):
+        suggestions.append(
+            Suggestion(
+                "context",
+                "Zi+ arXiv:2508.03678",
+                "Mention edge cases (empty input, null values) — key specificity driver",
+                "medium",
+                points=2,
+            )
+        )
+
     context += 6.0 * min(dna.context_specificity, 1.0)
     context = min(context, 25.0)
 

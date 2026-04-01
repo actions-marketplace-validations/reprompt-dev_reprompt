@@ -23,13 +23,18 @@ def render_compress(result: CompressResult) -> str:
 
     console.print()
 
-    # Token savings
+    # Token savings — framed as quality improvement (Zhang+ 2505.00019)
     if result.original_tokens > 0:
         pct = f"{result.savings_pct:.0f}%"
         console.print(
             f"  [dim]Tokens:[/dim]  {result.original_tokens} → {result.compressed_tokens}  "
             f"[bold cyan]({pct} saved)[/bold cyan]"
         )
+        if 5 <= result.savings_pct <= 50:
+            console.print(
+                "  [dim]Research:[/dim] Moderate compression improves LLM output quality "
+                "[dim](Zhang+ 2505.00019)[/dim]"
+            )
     else:
         console.print("  [dim]Tokens:[/dim]  0 → 0  (no change)")
 
