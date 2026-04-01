@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.2] - 2026-04-01
+
+### Changed
+- **MCP server consolidated** — 9→7 tools. Merged `check_prompt_quality` and `explain_prompt_quality` into an enhanced `score_prompt` that now returns tier, strengths, lint issues, and auto-rewrite. Each tool has a distinct, non-overlapping purpose. Follows MCP best practice of 2-7 focused tools.
+
 ## [2.2.1] - 2026-04-01
 
 ### Added
