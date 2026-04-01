@@ -59,6 +59,7 @@ $ reprompt
 |---------|-------------|
 | `reprompt` | Instant dashboard -- prompts, sessions, avg score, top categories |
 | `reprompt scan` | Auto-discover prompts from 9 AI tools |
+| `reprompt check "prompt"` | **Full diagnostic** -- score + lint + rewrite preview in one command |
 | `reprompt score "prompt"` | Research-backed 0-100 scoring with 30+ features |
 | `reprompt compare "a" "b"` | Side-by-side prompt analysis (or `--best-worst` for auto-selection) |
 | `reprompt insights` | Personal patterns vs research-optimal benchmarks |
@@ -72,6 +73,7 @@ $ reprompt
 
 | Command | Description |
 |---------|-------------|
+| `reprompt build "task"` | **Build prompts from components** -- task, context, files, errors, constraints. Model-aware (Claude/GPT/Gemini) |
 | `reprompt rewrite "prompt"` | **Rewrite prompts to score higher** -- filler removal, restructuring, hedging cleanup |
 | `reprompt compress "prompt"` | 4-layer prompt compression (40-60% token savings typical) |
 | `reprompt distill` | Extract important turns from conversations with 6-signal scoring |

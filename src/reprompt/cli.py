@@ -947,6 +947,67 @@ def lint(
 
 
 @app.command(rich_help_panel="Analyze")
+def check(
+    text: str = typer.Argument(..., help="Prompt text to check"),
+    model: str = typer.Option("", "--model", "-m", help="Target model (claude/gpt/gemini)"),
+    max_tokens: int = typer.Option(0, "--max-tokens", help="Token budget (0 = disabled)"),
+    json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
+    copy: bool = typer.Option(False, "--copy", help="Copy rewritten prompt to clipboard"),
+) -> None:
+    """Full prompt diagnostic — score + lint + rewrite in one command.
+
+    Runs all quality checks and shows a unified report with score breakdown,
+    strengths, suggestions, lint issues, and auto-rewrite preview.
+
+    Examples:
+
+        reprompt check "fix the auth bug in login.ts"
+
+        reprompt check "refactor the middleware" --model claude
+
+        reprompt check "help me debug this crash" --json
+    """
+    from reprompt.core.check import check_prompt
+
+    result = check_prompt(text, model=model, max_tokens=max_tokens)
+
+    if json_output:
+        import json as json_mod
+
+        data = {
+            "total": result.total,
+            "tier": result.tier,
+            "clarity": result.clarity,
+            "context": result.context,
+            "position": result.position,
+            "structure": result.structure,
+            "repetition": result.repetition,
+            "word_count": result.word_count,
+            "token_count": result.token_count,
+            "confirmations": result.confirmations,
+            "suggestions": result.suggestions,
+            "lint_issues": result.lint_issues,
+            "rewritten": result.rewritten,
+            "rewrite_delta": result.rewrite_delta,
+            "rewrite_changes": result.rewrite_changes,
+        }
+        typer.echo(json_mod.dumps(data, indent=2, ensure_ascii=False))
+    else:
+        from reprompt.output.check_terminal import render_check
+
+        typer.echo(render_check(result))
+
+    if copy:
+        _copy_to_clip(result.rewritten, quiet=json_output)
+
+    from reprompt.core.suggestions import get_suggestion
+
+    hint = get_suggestion("check")
+    if hint and not json_output:
+        console.print(f"  [dim]→ Try: {hint}[/dim]\n")
+
+
+@app.command(rich_help_panel="Analyze")
 def score(
     text: str = typer.Argument(..., help="Prompt text to score"),
     json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
