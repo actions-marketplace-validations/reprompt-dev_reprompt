@@ -1,4 +1,4 @@
-"""MCP server for reprompt — exposes prompt analytics as 9 focused tools.
+"""MCP server for reprompt — exposes prompt analytics as 7 focused tools.
 
 Usage:
     python -m reprompt.mcp          # stdio transport (default)
@@ -187,37 +187,42 @@ def compress_prompt(text: str) -> str:
 
 
 @mcp.tool
-def score_prompt(text: str) -> str:
-    """Score a prompt using research-backed analysis (0-100).
+def score_prompt(text: str, model: str | None = None) -> str:
+    """Score a prompt and get a full quality report (0-100).
 
-    Returns a breakdown across 5 dimensions: structure, context,
-    position, repetition, clarity. Based on 4 academic papers.
+    Returns tier label, dimensional breakdown, strengths, improvement
+    suggestions with point values, lint issues, and an auto-rewritten
+    version. This is the single tool for all prompt quality analysis.
 
     Args:
-        text: The prompt text to score
+        text: The prompt text to analyze
+        model: Target model for model-specific lint (claude/gpt/gemini). Optional.
     """
     try:
-        from reprompt.core.cost import estimate_cost, format_cost
-        from reprompt.core.extractors import extract_features
-        from reprompt.core.scorer import score_prompt as _score
+        from reprompt.core.check import check_prompt as _check
 
-        dna = extract_features(text, source="mcp", session_id="mcp-score")
-        breakdown = _score(dna)
-        cost_usd = estimate_cost(dna.token_count, source="mcp")
+        result = _check(text, model=model or "")
         return json.dumps(
             {
-                "total": breakdown.total,
-                "structure": breakdown.structure,
-                "context": breakdown.context,
-                "position": breakdown.position,
-                "repetition": breakdown.repetition,
-                "clarity": breakdown.clarity,
-                "task_type": dna.task_type,
-                "token_count": dna.token_count,
-                "estimated_cost": format_cost(cost_usd),
+                "total": result.total,
+                "tier": result.tier,
+                "clarity": result.clarity,
+                "context": result.context,
+                "position": result.position,
+                "structure": result.structure,
+                "repetition": result.repetition,
+                "word_count": result.word_count,
+                "token_count": result.token_count,
+                "strengths": [c["message"] for c in result.confirmations[:3]],
                 "suggestions": [
-                    {"message": s.message, "impact": s.impact} for s in breakdown.suggestions[:3]
+                    {"message": s["message"], "points": s.get("points", 0)}
+                    for s in result.suggestions[:3]
                 ],
+                "lint_issues": [
+                    {"rule": i["rule"], "message": i["message"]} for i in result.lint_issues
+                ],
+                "rewritten": result.rewritten if result.rewrite_changes else None,
+                "rewrite_changes": result.rewrite_changes or None,
             },
             indent=2,
         )
@@ -298,47 +303,6 @@ def scan_sessions(source: str | None = None) -> str:
 
 
 @mcp.tool
-def check_prompt_quality(text: str, model: str | None = None) -> str:
-    """Full prompt diagnostic — score + lint + rewrite in one call.
-
-    Returns score breakdown, strengths, suggestions with point values,
-    lint issues, and an auto-rewritten version. The most comprehensive
-    single-call analysis available.
-
-    Args:
-        text: The prompt text to analyze
-        model: Target model for model-specific lint (claude/gpt/gemini). Optional.
-    """
-    try:
-        from reprompt.core.check import check_prompt as _check
-
-        result = _check(text, model=model or "")
-        return json.dumps(
-            {
-                "total": result.total,
-                "tier": result.tier,
-                "clarity": result.clarity,
-                "context": result.context,
-                "position": result.position,
-                "structure": result.structure,
-                "repetition": result.repetition,
-                "word_count": result.word_count,
-                "token_count": result.token_count,
-                "confirmations": result.confirmations[:3],
-                "suggestions": result.suggestions[:3],
-                "lint_issues": result.lint_issues,
-                "rewritten": result.rewritten,
-                "rewrite_delta": result.rewrite_delta,
-                "rewrite_changes": result.rewrite_changes,
-            },
-            indent=2,
-        )
-    except Exception as exc:
-        logger.debug("check_prompt_quality error: %s", exc)
-        return json.dumps({"error": str(exc)})
-
-
-@mcp.tool
 def build_prompt_from_parts(
     task: str,
     context: str = "",
@@ -391,36 +355,6 @@ def build_prompt_from_parts(
         )
     except Exception as exc:
         logger.debug("build_prompt_from_parts error: %s", exc)
-        return json.dumps({"error": str(exc)})
-
-
-@mcp.tool
-def explain_prompt_quality(text: str) -> str:
-    """Explain what makes a prompt good or bad in plain English.
-
-    Returns educational feedback: what's working, what's missing,
-    and specific tips to improve. No LLM needed.
-
-    Args:
-        text: The prompt text to explain
-    """
-    try:
-        from reprompt.core.explain import explain_prompt as _explain
-
-        result = _explain(text)
-        return json.dumps(
-            {
-                "score": result.score,
-                "tier": result.tier,
-                "summary": result.summary,
-                "strengths": result.strengths,
-                "weaknesses": result.weaknesses,
-                "tips": result.tips,
-            },
-            indent=2,
-        )
-    except Exception as exc:
-        logger.debug("explain_prompt_quality error: %s", exc)
         return json.dumps({"error": str(exc)})
 
 

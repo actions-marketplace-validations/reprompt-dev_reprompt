@@ -170,35 +170,67 @@ def test_mcp_serve_cli(tmp_path, monkeypatch):
 
 
 def test_tool_count():
-    """Verify the MCP server exposes exactly 9 tools."""
+    """Verify the MCP server exposes exactly 7 tools."""
     import asyncio
 
     from reprompt.mcp import mcp as _mcp
 
     tools = asyncio.run(_mcp.list_tools())
     names = [t.name for t in tools]
-    assert len(tools) == 9, f"Expected 9 tools, got {len(tools)}: {names}"
+    assert len(tools) == 7, f"Expected 7 tools, got {len(tools)}: {names}"
 
 
-# ─── New tools (check, build, explain) ────────────────────────────────────
+# ─── Enhanced score_prompt (unified) ──────────────────────────────────────
 
 
-def test_check_prompt_quality():
-    from reprompt.mcp import check_prompt_quality
+def test_score_prompt_has_tier():
+    from reprompt.mcp import score_prompt
 
-    result = json.loads(check_prompt_quality("fix the auth bug in login.ts"))
-    assert "total" in result
+    result = json.loads(score_prompt("fix the auth bug in login.ts"))
     assert "tier" in result
+    assert result["tier"] in ("DRAFT", "BASIC", "GOOD", "STRONG", "EXPERT")
+
+
+def test_score_prompt_has_strengths():
+    from reprompt.mcp import score_prompt
+
+    result = json.loads(score_prompt("fix the auth bug in login.ts"))
+    assert "strengths" in result
+    assert isinstance(result["strengths"], list)
+
+
+def test_score_prompt_has_lint():
+    from reprompt.mcp import score_prompt
+
+    result = json.loads(score_prompt("fix it"))
     assert "lint_issues" in result
+
+
+def test_score_prompt_has_rewrite():
+    from reprompt.mcp import score_prompt
+
+    result = json.loads(score_prompt("I was wondering if you could maybe fix the auth bug"))
     assert "rewritten" in result
-    assert "suggestions" in result
+    assert "rewrite_changes" in result
 
 
-def test_check_prompt_quality_with_model():
-    from reprompt.mcp import check_prompt_quality
+def test_score_prompt_with_model():
+    from reprompt.mcp import score_prompt
 
-    result = json.loads(check_prompt_quality("fix the auth bug", model="claude"))
+    result = json.loads(score_prompt("fix the auth bug", model="claude"))
     assert "total" in result
+    assert "lint_issues" in result
+
+
+def test_score_prompt_suggestions_have_points():
+    from reprompt.mcp import score_prompt
+
+    result = json.loads(score_prompt("fix the auth bug"))
+    if result["suggestions"]:
+        assert "points" in result["suggestions"][0]
+
+
+# ─── build_prompt_from_parts ──────────────────────────────────────────────
 
 
 def test_build_prompt_from_parts():
@@ -225,23 +257,3 @@ def test_build_prompt_from_parts_minimal():
     result = json.loads(build_prompt_from_parts(task="fix the bug"))
     assert "prompt" in result
     assert result["score"] > 0
-
-
-def test_explain_prompt_quality():
-    from reprompt.mcp import explain_prompt_quality
-
-    result = json.loads(explain_prompt_quality("fix the auth bug in login.ts"))
-    assert "score" in result
-    assert "tier" in result
-    assert "summary" in result
-    assert "strengths" in result
-    assert "weaknesses" in result
-    assert "tips" in result
-
-
-def test_explain_prompt_quality_short():
-    from reprompt.mcp import explain_prompt_quality
-
-    result = json.loads(explain_prompt_quality("fix it"))
-    assert result["score"] > 0
-    assert len(result["summary"]) > 0
