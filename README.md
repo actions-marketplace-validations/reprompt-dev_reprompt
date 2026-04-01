@@ -51,6 +51,8 @@ $ reprompt compress "I was wondering if you could please help me refactor this c
 | `reprompt insights` | Personal patterns vs research-optimal benchmarks |
 | `reprompt style` | Prompting fingerprint with `--trends` for evolution tracking |
 | `reprompt agent` | Agent workflow analysis -- error loops, tool patterns, session efficiency |
+| `reprompt sessions` | Session quality scores with frustration signal detection |
+| `reprompt repetition` | Cross-session repetition detection -- spot recurring prompts |
 
 ### Optimize
 
@@ -59,7 +61,8 @@ $ reprompt compress "I was wondering if you could please help me refactor this c
 | `reprompt compress "prompt"` | 4-layer prompt compression (40-60% token savings typical) |
 | `reprompt distill` | Extract important turns from conversations with 6-signal scoring |
 | `reprompt distill --export` | Recover context when a session runs out -- paste into new session |
-| `reprompt lint` | Prompt quality linter with GitHub Action support |
+| `reprompt lint` | Configurable prompt quality linter with CI/GitHub Action support |
+| `reprompt init` | Generate `.reprompt.toml` config for your project |
 
 ### Manage
 
@@ -176,6 +179,24 @@ repos:
 reprompt lint --score-threshold 50  # exit 1 if avg score < 50
 reprompt lint --strict              # exit 1 on warnings
 reprompt lint --json                # machine-readable output
+```
+
+#### Project configuration
+
+```bash
+reprompt init   # generates .reprompt.toml with all rules documented
+```
+
+```toml
+# .reprompt.toml (or [tool.reprompt.lint] in pyproject.toml)
+[lint]
+score-threshold = 50       # fail if avg score < 50
+
+[lint.rules]
+min-length = 20            # error if prompt < 20 chars (0 = off)
+short-prompt = 40          # warning if < 40 chars (0 = off)
+vague-prompt = true        # error on "fix it" etc (false = off)
+debug-needs-reference = true
 ```
 
 ## Privacy
