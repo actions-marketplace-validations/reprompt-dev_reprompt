@@ -60,10 +60,10 @@ def render_rewrite(result: RewriteResult) -> str:
 def _score_color(score: float) -> str:
     if score >= 85:
         return "bold magenta"
-    if score >= 70:
+    if score >= 60:
         return "bold green"
-    if score >= 55:
-        return "bold yellow"
     if score >= 40:
+        return "bold yellow"
+    if score >= 25:
         return "yellow"
     return "bold red"

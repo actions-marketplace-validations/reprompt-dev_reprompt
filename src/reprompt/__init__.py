@@ -19,11 +19,11 @@ def _grade(total: float) -> str:
     """Map 0-100 score to letter grade."""
     if total >= 85:
         return "A"
-    if total >= 70:
+    if total >= 60:
         return "B"
-    if total >= 55:
-        return "C"
     if total >= 40:
+        return "C"
+    if total >= 25:
         return "D"
     return "F"
 

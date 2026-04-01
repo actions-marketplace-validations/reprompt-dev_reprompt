@@ -2,13 +2,18 @@
 """Weighted prompt scoring engine with research-calibrated weights.
 
 Scores a PromptDNA feature vector on a 0-100 scale across five categories:
-  1. Structure (0-25): role, constraints, examples, output format
+  1. Clarity (0-25): low ambiguity, good opening, reasonable length
   2. Context (0-25): code blocks, file refs, error messages, specificity
   3. Position (0-20): instruction placement (Lost in the Middle)
-  4. Repetition (0-15): keyword reinforcement (Google Research)
-  5. Clarity (0-15): low ambiguity, good opening, reasonable length
+  4. Structure (0-15): role, constraints, examples, output format
+  5. Repetition (0-15): keyword reinforcement (Google Research)
 
-Each weight is derived from published research findings:
+Weight rationale: clarity and context are what normal developers can
+improve immediately; structure and repetition are advanced techniques
+that provide additional lift. This ensures a clear, specific prompt
+scores 55-65 without requiring markdown or role definitions.
+
+Research references:
 - Position weights from the U-curve in arXiv:2307.03172 (30% degradation)
 - Repetition weights from arXiv:2512.14982 (up to 76% improvement)
 - Specificity weights from DETAIL arXiv:2512.02246
@@ -62,11 +67,11 @@ class ScoreBreakdown:
     total: float = 0.0
 
     # Category scores (each out of their max)
-    structure: float = 0.0  # max 25
+    structure: float = 0.0  # max 15
     context: float = 0.0  # max 25
     position: float = 0.0  # max 20
     repetition: float = 0.0  # max 15
-    clarity: float = 0.0  # max 15
+    clarity: float = 0.0  # max 25
 
     suggestions: list[Suggestion] = field(default_factory=list)
 
@@ -78,22 +83,22 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
     """
     suggestions: list[Suggestion] = []
 
-    # ── Structure (0-25) ──
+    # ── Structure (0-15) ──
     structure = 0.0
     if dna.has_role_definition:
-        structure += 5.0
+        structure += 3.0
     else:
         suggestions.append(
             Suggestion(
                 "structure",
                 "Prompt Report",
                 'Add a role definition (e.g., "You are a senior Python developer")',
-                "medium",
+                "low",
             )
         )
 
     if dna.has_constraints:
-        structure += 4.0 + min(dna.constraint_count, 3) * 1.0
+        structure += 3.0 + min(dna.constraint_count, 2) * 1.0
     else:
         suggestions.append(
             Suggestion(
@@ -105,16 +110,16 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
         )
 
     if dna.has_examples:
-        structure += 4.0 + min(dna.example_count, 2) * 1.0
+        structure += 2.0 + min(dna.example_count, 1) * 1.0
 
     if dna.has_output_format:
-        structure += 3.0
-
-    if dna.has_step_by_step:
         structure += 2.0
 
-    structure += min(dna.section_count, 3) * 1.0
-    structure = min(structure, 25.0)
+    if dna.has_step_by_step:
+        structure += 1.0
+
+    structure += min(dna.section_count, 2) * 1.0
+    structure = min(structure, 15.0)
 
     # ── Context (0-25) ──
     context = 0.0
@@ -181,14 +186,14 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
             )
         )
 
-    # ── Clarity (0-15) ──
+    # ── Clarity (0-25) ──
     clarity = 0.0
 
     # Opening quality
-    clarity += 5.0 * min(dna.opening_quality, 1.0)
+    clarity += 9.0 * min(dna.opening_quality, 1.0)
 
     # Low ambiguity
-    clarity += 5.0 * max(0.0, 1.0 - dna.ambiguity_score)
+    clarity += 8.0 * max(0.0, 1.0 - dna.ambiguity_score)
     if dna.ambiguity_score > 0.5:
         suggestions.append(
             Suggestion(
@@ -201,11 +206,11 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
 
     # Reasonable length (not too short)
     if dna.word_count >= 20:
-        clarity += 5.0
+        clarity += 8.0
     elif dna.word_count >= 10:
-        clarity += 3.0
+        clarity += 5.0
     elif dna.word_count >= 5:
-        clarity += 1.0
+        clarity += 2.0
     else:
         suggestions.append(
             Suggestion(
@@ -216,7 +221,7 @@ def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
             )
         )
 
-    clarity = min(clarity, 15.0)
+    clarity = min(clarity, 25.0)
 
     # ── Total ──
     total = structure + context + position + repetition + clarity

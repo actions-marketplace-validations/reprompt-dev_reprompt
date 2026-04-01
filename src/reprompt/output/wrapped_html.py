@@ -24,11 +24,11 @@ def _score_color(score: float) -> str:
     """Return a hex color based on the overall score percentage."""
     if score >= 85:
         return "#7C4DFF"
-    if score >= 70:
+    if score >= 60:
         return "#00C853"
-    if score >= 50:
+    if score >= 40:
         return "#FFD700"
-    if score >= 30:
+    if score >= 25:
         return "#FF8C00"
     return "#FF4444"
 

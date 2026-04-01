@@ -29,26 +29,26 @@ class TestGradeFunction:
     def test_grade_b(self):
         from reprompt import _grade
 
-        assert _grade(70) == "B"
+        assert _grade(60) == "B"
         assert _grade(84) == "B"
 
     def test_grade_c(self):
         from reprompt import _grade
 
-        assert _grade(55) == "C"
-        assert _grade(69) == "C"
+        assert _grade(40) == "C"
+        assert _grade(59) == "C"
 
     def test_grade_d(self):
         from reprompt import _grade
 
-        assert _grade(40) == "D"
-        assert _grade(54) == "D"
+        assert _grade(25) == "D"
+        assert _grade(39) == "D"
 
     def test_grade_f(self):
         from reprompt import _grade
 
         assert _grade(0) == "F"
-        assert _grade(39) == "F"
+        assert _grade(24) == "F"
 
 
 class TestLazyImports:
