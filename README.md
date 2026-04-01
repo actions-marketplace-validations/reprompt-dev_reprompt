@@ -1,6 +1,6 @@
 # `re:prompt`
 
-**Analyze what you type into AI tools** -- prompt scoring, agent error loops, leaked credential detection, conversation distillation.
+**Score, rewrite, and optimize your AI prompts** -- the only CLI that improves your prompts automatically. No LLM needed.
 
 [![PyPI version](https://img.shields.io/pypi/v/reprompt-cli)](https://pypi.org/project/reprompt-cli/)
 [![Python 3.10+](https://img.shields.io/pypi/pyversions/reprompt-cli)](https://pypi.org/project/reprompt-cli/)
@@ -16,26 +16,39 @@
 
 ```bash
 $ pip install reprompt-cli
+
+# Rewrite a weak prompt into a better one (no LLM, rule-based)
+$ reprompt rewrite "I was wondering if you could maybe help me fix the auth bug"
+  34 → 52 (+18)
+
+  ╭─ Rewritten ────────────────────────────────────────────────╮
+  │ Help me fix the auth bug.                                  │
+  ╰────────────────────────────────────────────────────────────╯
+
+  Changes
+  ✓ Removed filler (24% shorter)
+  ✓ Removed hedging language
+
+  You should also
+  → Add actual code snippets or error messages for context
+  → Reference specific files or functions by name
+  → Add constraints (e.g., "Do not modify existing tests")
+
+# Score any prompt instantly (research-backed, 30+ features)
+$ reprompt score "Fix the auth bug in src/login.ts where JWT expires"
+  Score: 40/100  (Fair)
+  Tip: Include the error message -- debug prompts with errors are 3.7x more effective
+
+# Compress prompts to save tokens
+$ reprompt compress "I was wondering if you could please help me refactor this code. Basically what I need is to split this function into smaller helpers."
+  Before: 28 tokens → After: 14 tokens (50% saved)
+
+# Your personal dashboard
 $ reprompt
   ╭─ Prompt Dashboard ─────────────────────────────────────────╮
   │  Prompts: 1,063 (295 unique)   Sessions: 890              │
   │  Avg Score: 68/100             Top: debug (31%), impl (24%)│
-  │  Sources: claude-code, cursor, chatgpt                     │
   ╰────────────────────────────────────────────────────────────╯
-
-$ reprompt score "Fix the auth bug in src/login.ts where JWT expires"
-  Score: 40/100  (Fair)
-  Structure: 0/25 | Context: 8/25 | Position: 20/20 | Repetition: 0/15 | Clarity: 12/15
-  Tip: Include the error message -- debug prompts with errors are 3.7x more effective
-
-$ reprompt distill --last 3 --summary
-  Session: feature-dev (42 turns, 18 important)
-  Key moments: initial spec → auth module → test failures → JWT fix → passing
-  Context: "Building auth system with JWT refresh tokens for Express API"
-
-$ reprompt compress "I was wondering if you could please help me refactor this code. Basically what I need is to split this function into smaller helpers and add error handling."
-  Before: 28 tokens → After: 14 tokens (50% saved)
-  "Help me refactor this code. Split this function into smaller helpers and add error handling."
 ```
 
 ## What it does
@@ -58,6 +71,7 @@ $ reprompt compress "I was wondering if you could please help me refactor this c
 
 | Command | Description |
 |---------|-------------|
+| `reprompt rewrite "prompt"` | **Rewrite prompts to score higher** -- filler removal, restructuring, hedging cleanup |
 | `reprompt compress "prompt"` | 4-layer prompt compression (40-60% token savings typical) |
 | `reprompt distill` | Extract important turns from conversations with 6-signal scoring |
 | `reprompt distill --export` | Recover context when a session runs out -- paste into new session |
