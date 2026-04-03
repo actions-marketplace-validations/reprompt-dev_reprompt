@@ -9,6 +9,8 @@ Thanks for your interest in contributing! reprompt is an open-source prompt inte
 
 ## Development Setup
 
+**Requirements:** Python 3.10+ and [uv](https://docs.astral.sh/uv/)
+
 ```bash
 git clone https://github.com/reprompt-dev/reprompt
 cd reprompt
@@ -18,9 +20,11 @@ uv pip install -e ".[dev]"
 
 ## Running Tests
 
+CI enforces **88% minimum coverage**. Run locally before pushing:
+
 ```bash
 uv run pytest tests/ -v
-uv run pytest tests/ -v --cov=reprompt  # with coverage
+uv run pytest tests/ -v --cov=reprompt --cov-fail-under=88  # with coverage gate
 ```
 
 ## Code Style
@@ -42,12 +46,12 @@ uv run mypy src/reprompt/
 
 ## Pull Requests
 
-1. Fork the repo and create a feature branch
+1. Fork the repo and create a feature branch from `main`
 2. Write tests for new functionality
-3. Ensure all tests pass and coverage doesn't decrease
-4. Run `ruff check` and `ruff format`
+3. Ensure all tests pass and coverage stays above 88%
+4. Run `ruff check src/ tests/` and `ruff format --check src/ tests/`
 5. Run `mypy src/reprompt/` -- must pass clean
-6. Submit a PR with a clear description
+6. Submit a PR with a clear description — CI must pass before merge
 
 ### Before Submitting
 
@@ -98,7 +102,7 @@ Extend sensitive content detection in `core/privacy_scan.py`:
 
 ```
 src/reprompt/
-├── cli.py              # Typer CLI (21 commands)
+├── cli.py              # Typer CLI (30+ commands)
 ├── config.py           # pydantic-settings configuration
 ├── core/               # Business logic
 │   ├── models.py       # Prompt dataclass
