@@ -114,5 +114,3 @@ def render_rewrite_diff(result: RewriteResult) -> str:
     )
     console.print()
     return buf.getvalue()
-
-

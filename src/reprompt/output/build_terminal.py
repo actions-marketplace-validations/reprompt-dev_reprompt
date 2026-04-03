@@ -40,5 +40,3 @@ def render_build(result: BuildResult) -> str:
 
     console.print()
     return buf.getvalue()
-
-

@@ -194,5 +194,3 @@ def _generate_summary(total: float, tier: str, strengths: list, weaknesses: list
             "Very minimal prompt. The AI will likely ask follow-up questions or make "
             "assumptions. Adding any context — files, errors, constraints — helps."
         )
-
-

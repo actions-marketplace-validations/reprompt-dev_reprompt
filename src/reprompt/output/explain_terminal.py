@@ -46,5 +46,3 @@ def render_explain(result: ExplainResult) -> str:
 
     console.print()
     return buf.getvalue()
-
-

@@ -101,5 +101,3 @@ def check_prompt(
         word_count=dna.word_count,
         token_count=dna.token_count,
     )
-
-
