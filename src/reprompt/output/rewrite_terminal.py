@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from rich.console import Console
 from rich.panel import Panel
 
+from reprompt.core.scorer import get_tier, tier_color
+
 if TYPE_CHECKING:
     from reprompt.core.rewrite import RewriteResult
 
@@ -18,7 +20,7 @@ def render_rewrite(result: RewriteResult) -> str:
     buf = StringIO()
     console = Console(file=buf, width=100, record=True)
 
-    # Score change header
+    # Score change header — tier-first display
     delta = result.score_delta
     if delta > 0:
         delta_str = f"[green]+{delta:.0f}[/green]"
@@ -27,13 +29,15 @@ def render_rewrite(result: RewriteResult) -> str:
     else:
         delta_str = "[dim]±0[/dim]"
 
-    before_color = _score_color(result.score_before)
-    after_color = _score_color(result.score_after)
+    before_color = tier_color(result.score_before)
+    after_color = tier_color(result.score_after)
+    before_tier = get_tier(result.score_before)
+    after_tier = get_tier(result.score_after)
 
     console.print(
-        f"\n  [{before_color}]{result.score_before:.0f}[/{before_color}]"
-        f" → [{after_color}]{result.score_after:.0f}[/{after_color}]"
-        f" ({delta_str})\n"
+        f"\n  [{before_color}]{before_tier} · {result.score_before:.0f}[/{before_color}]"
+        f" → [{after_color}]{after_tier} · {result.score_after:.0f}[/{after_color}]"
+        f"  ({delta_str} pts)\n"
     )
 
     # Rewritten prompt
@@ -99,18 +103,16 @@ def render_rewrite_diff(result: RewriteResult) -> str:
         delta_str = f"[red]{delta:.0f}[/red]"
     else:
         delta_str = "[dim]±0[/dim]"
-    console.print(f"\n  Score: {result.score_before:.0f} → {result.score_after:.0f} ({delta_str})")
+    before_tier = get_tier(result.score_before)
+    after_tier = get_tier(result.score_after)
+    before_c = tier_color(result.score_before)
+    after_c = tier_color(result.score_after)
+    console.print(
+        f"\n  [{before_c}]{before_tier} · {result.score_before:.0f}[/{before_c}]"
+        f" → [{after_c}]{after_tier} · {result.score_after:.0f}[/{after_c}]"
+        f"  ({delta_str} pts)"
+    )
     console.print()
     return buf.getvalue()
 
 
-def _score_color(score: float) -> str:
-    if score >= 85:
-        return "bold magenta"
-    if score >= 60:
-        return "bold green"
-    if score >= 40:
-        return "bold yellow"
-    if score >= 25:
-        return "yellow"
-    return "bold red"

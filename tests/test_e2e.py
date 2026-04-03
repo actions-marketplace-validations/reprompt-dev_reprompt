@@ -303,7 +303,10 @@ class TestScienceE2E:
             ],
         )
         assert result.exit_code == 0
-        assert "Score" in result.output or "score" in result.output
+        # Tier label should appear (EXPERT/STRONG/GOOD/BASIC/DRAFT)
+        assert any(
+            tier in result.output for tier in ("EXPERT", "STRONG", "GOOD", "BASIC", "DRAFT")
+        )
 
     def test_compare_cli_e2e(self):
         """CLI compare command produces valid comparison."""

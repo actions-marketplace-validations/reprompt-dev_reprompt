@@ -87,6 +87,32 @@ class ScoreBreakdown:
     confirmations: list[Confirmation] = field(default_factory=list)
 
 
+def get_tier(score: float) -> str:
+    """Map numeric score to tier label."""
+    if score >= 85:
+        return "EXPERT"
+    if score >= 70:
+        return "STRONG"
+    if score >= 50:
+        return "GOOD"
+    if score >= 30:
+        return "BASIC"
+    return "DRAFT"
+
+
+def tier_color(score: float) -> str:
+    """Rich markup color for a score's tier."""
+    if score >= 85:
+        return "bold magenta"
+    if score >= 70:
+        return "bold green"
+    if score >= 50:
+        return "bold yellow"
+    if score >= 30:
+        return "yellow"
+    return "bold red"
+
+
 def score_prompt(dna: PromptDNA) -> ScoreBreakdown:
     """Score a PromptDNA and return a detailed breakdown.
 

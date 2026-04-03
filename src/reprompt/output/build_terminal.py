@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 from rich.console import Console
 from rich.panel import Panel
 
+from reprompt.core.scorer import tier_color
+
 if TYPE_CHECKING:
     from reprompt.core.build import BuildResult
 
@@ -18,7 +20,7 @@ def render_build(result: BuildResult) -> str:
     console = Console(file=buf, width=100, record=True)
 
     # Score + tier header
-    color = _score_color(result.score)
+    color = tier_color(result.score)
     console.print(f"\n  [{color}]{result.tier}[/{color}] · [{color}]{result.score:.0f}[/{color}]\n")
 
     # Built prompt panel
@@ -40,13 +42,3 @@ def render_build(result: BuildResult) -> str:
     return buf.getvalue()
 
 
-def _score_color(score: float) -> str:
-    if score >= 85:
-        return "bold magenta"
-    if score >= 60:
-        return "bold green"
-    if score >= 40:
-        return "bold yellow"
-    if score >= 25:
-        return "yellow"
-    return "bold red"

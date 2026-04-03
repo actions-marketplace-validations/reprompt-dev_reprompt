@@ -25,12 +25,12 @@ class ExplainResult:
 def explain_prompt(text: str) -> ExplainResult:
     """Explain what makes a prompt good or bad."""
     from reprompt.core.extractors import extract_features
-    from reprompt.core.scorer import score_prompt
+    from reprompt.core.scorer import get_tier, score_prompt
 
     dna = extract_features(text, source="explain", session_id="")
     breakdown = score_prompt(dna)
 
-    tier = _get_tier(breakdown.total)
+    tier = get_tier(breakdown.total)
     strengths: list[str] = []
     weaknesses: list[str] = []
     tips: list[str] = []
@@ -196,13 +196,3 @@ def _generate_summary(total: float, tier: str, strengths: list, weaknesses: list
         )
 
 
-def _get_tier(score: float) -> str:
-    if score >= 85:
-        return "EXPERT"
-    if score >= 70:
-        return "STRONG"
-    if score >= 50:
-        return "GOOD"
-    if score >= 30:
-        return "BASIC"
-    return "DRAFT"

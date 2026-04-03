@@ -1,57 +1,34 @@
 # `re:prompt`
 
-**Score, rewrite, and optimize your AI prompts** -- the only CLI that improves your prompts automatically. No LLM needed.
+**Grammarly for Prompts** -- research-backed scoring, rule-based rewriting, and cross-tool analytics for your AI conversations. No LLM needed, <50ms per prompt.
 
 [![PyPI version](https://img.shields.io/pypi/v/reprompt-cli)](https://pypi.org/project/reprompt-cli/)
 [![Python 3.10+](https://img.shields.io/pypi/pyversions/reprompt-cli)](https://pypi.org/project/reprompt-cli/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/reprompt-dev/reprompt/actions)
+[![Tests](https://img.shields.io/badge/tests-1892_passing-brightgreen)](https://github.com/reprompt-dev/reprompt/actions)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](https://github.com/reprompt-dev/reprompt)
 
 ---
 
-![reprompt demo](docs/demo.gif)
-
 ## See it in action
 
-```bash
-$ pip install reprompt-cli
+### `reprompt check` -- full diagnostic in one command
 
-# Rewrite a weak prompt into a better one (no LLM, rule-based)
-$ reprompt rewrite "I was wondering if you could maybe help me fix the auth bug"
-  34 → 52 (+18)
+<img src="docs/screenshots/check-good.svg" alt="reprompt check — good prompt" width="800">
 
-  ╭─ Rewritten ────────────────────────────────────────────────╮
-  │ Help me fix the auth bug.                                  │
-  ╰────────────────────────────────────────────────────────────╯
+### `reprompt rewrite` -- rule-based prompt improvement
 
-  Changes
-  ✓ Removed filler (24% shorter)
-  ✓ Removed hedging language
+<img src="docs/screenshots/rewrite.svg" alt="reprompt rewrite — before/after" width="800">
 
-  You should also
-  → Add actual code snippets or error messages for context
-  → Reference specific files or functions by name
-  → Add constraints (e.g., "Do not modify existing tests")
+### `reprompt build` -- assemble prompts from components
 
-# Full diagnostic in one command
-$ reprompt check "Fix the auth bug in src/login.ts where JWT expires"
-  GOOD · 58
+<img src="docs/screenshots/build.svg" alt="reprompt build — structured prompt assembly" width="800">
 
-  Clarity     ████████████░░░░░░░░ 15/25
-  Context     ████████████████░░░░ 20/25
-  Position    ████████████████████ 20/20
-  Structure   ░░░░░░░░░░░░░░░░░░░░  0/15
-  Repetition  ███░░░░░░░░░░░░░░░░░  3/15
+<details>
+<summary>What a bad prompt looks like</summary>
 
-  Strengths
-  ✓ Key instruction at the start — optimal placement
-  ✓ References specific files
-
-  Improve
-  → Add the actual error message (+6 pts)
-  → Add constraints like "Don't modify tests" (+5 pts)
-```
+<img src="docs/screenshots/check-bad.svg" alt="reprompt check — weak prompt" width="800">
+</details>
 
 ## What it does
 
@@ -114,6 +91,52 @@ Cross-validated findings that inform our engine:
 - **Prompt quality is independently measurable** — prompt-only scoring predicts output quality without seeing the response (ACL 2025, [2503.10084](https://arxiv.org/abs/2503.10084))
 
 All analysis runs locally in <1ms per prompt. No LLM calls, no network requests.
+
+## How it works
+
+```
+                          ┌─────────────────────────┐
+                          │     reprompt check       │  ← single entry point
+                          └────────┬────────────────┘
+                                   │
+               ┌───────────────────┼───────────────────┐
+               ▼                   ▼                   ▼
+        ┌─────────────┐   ┌──────────────┐   ┌──────────────┐
+        │  Score (0-100) │   │   Lint       │   │   Rewrite    │
+        │  30+ features  │   │   rule-based │   │   4 layers   │
+        │  5 dimensions  │   │   CI-ready   │   │   no LLM     │
+        └──────┬──────┘   └──────┬───────┘   └──────┬───────┘
+               │                  │                   │
+               └───────────────────┼───────────────────┘
+                                   ▼
+                          ┌──────────────────┐
+                          │  Unified Report   │
+                          │  score + issues + │
+                          │  rewritten prompt │
+                          └──────────────────┘
+
+ Data sources:
+ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+ │Claude Code│ │  Cursor  │ │  Aider   │ │ ChatGPT  │ │ 5 more.. │
+ └─────┬────┘ └─────┬────┘ └─────┬────┘ └─────┬────┘ └─────┬────┘
+       └─────────────┴───────────┴─────────────┴─────────────┘
+                                 │
+                    scan → dedup → store → analyze
+                                 │
+              ┌──────────────────┼──────────────────┐
+              ▼                  ▼                  ▼
+        ┌──────────┐     ┌──────────────┐    ┌──────────┐
+        │ insights │     │  patterns    │    │ sessions │
+        │ style    │     │  repetition  │    │ projects │
+        │ digest   │     │  privacy     │    │ agent    │
+        └──────────┘     └──────────────┘    └──────────┘
+```
+
+**Key design decisions:**
+- **Pure rules, no LLM** -- scoring and rewriting use regex + TF-IDF + research heuristics. Deterministic, private, <1ms per prompt.
+- **Adapter pattern** -- each AI tool gets a parser that normalizes to a common `Prompt` model. Adding a new tool = one file.
+- **Two-layer dedup** -- SHA-256 for exact matches, TF-IDF cosine similarity for near-dupes. Handles the "same prompt, slightly different wording" problem.
+- **Research-calibrated** -- 10 peer-reviewed papers inform the scoring weights. Not vibes, not benchmarks-on-benchmarks.
 
 ## Conversation Distillation
 
@@ -220,7 +243,7 @@ The comment updates on each push — no duplicates. Uses `GITHUB_TOKEN` (no extr
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/reprompt-dev/reprompt
-    rev: v2.2.2
+    rev: v2.5.0
     hooks:
       - id: reprompt-lint
 ```

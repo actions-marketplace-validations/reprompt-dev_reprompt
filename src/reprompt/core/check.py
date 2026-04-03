@@ -51,7 +51,7 @@ def check_prompt(
     from reprompt.core.extractors import extract_features
     from reprompt.core.lint import LintConfig, lint_prompt
     from reprompt.core.rewrite import rewrite_prompt
-    from reprompt.core.scorer import score_prompt
+    from reprompt.core.scorer import get_tier, score_prompt
 
     # 1. Score
     dna = extract_features(text, source="check", session_id="")
@@ -69,7 +69,7 @@ def check_prompt(
     rewrite_result = rewrite_prompt(text)
 
     # Build result
-    tier = _get_tier(breakdown.total)
+    tier = get_tier(breakdown.total)
 
     return CheckResult(
         total=breakdown.total,
@@ -103,13 +103,3 @@ def check_prompt(
     )
 
 
-def _get_tier(score: float) -> str:
-    if score >= 85:
-        return "EXPERT"
-    if score >= 70:
-        return "STRONG"
-    if score >= 50:
-        return "GOOD"
-    if score >= 30:
-        return "BASIC"
-    return "DRAFT"

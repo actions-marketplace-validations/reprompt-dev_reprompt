@@ -96,13 +96,13 @@ def build_prompt(
 
     # Score the assembled prompt
     from reprompt.core.extractors import extract_features
-    from reprompt.core.scorer import score_prompt
+    from reprompt.core.scorer import get_tier, score_prompt
 
     dna = extract_features(prompt, source="build", session_id="")
     score_result = score_prompt(dna)
 
     # Determine tier
-    tier = _get_tier(score_result.total)
+    tier = get_tier(score_result.total)
 
     # Generate suggestions for missing components
     suggestions = _missing_suggestions(components)
@@ -209,19 +209,6 @@ def _format_markdown(parts: list[str]) -> str:
             sections.append(part)
 
     return "\n\n".join(sections)
-
-
-def _get_tier(score: float) -> str:
-    """Map score to tier label."""
-    if score >= 85:
-        return "EXPERT"
-    if score >= 70:
-        return "STRONG"
-    if score >= 50:
-        return "GOOD"
-    if score >= 30:
-        return "BASIC"
-    return "DRAFT"
 
 
 def _missing_suggestions(components: list[str]) -> list[str]:

@@ -14,7 +14,9 @@ class TestScoreCommand:
     def test_score_basic(self):
         result = runner.invoke(app, ["score", "Fix the bug in auth.py"])
         assert result.exit_code == 0
-        assert "Score" in result.output or "score" in result.output
+        assert any(
+            tier in result.output for tier in ("EXPERT", "STRONG", "GOOD", "BASIC", "DRAFT")
+        )
 
     def test_score_shows_breakdown(self):
         result = runner.invoke(

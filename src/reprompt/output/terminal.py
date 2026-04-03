@@ -9,6 +9,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from reprompt.core.scorer import get_tier, tier_color
+
 
 def render_report(data: dict[str, Any]) -> str:
     """Render a full report to a string using Rich."""
@@ -325,30 +327,13 @@ def render_score(breakdown: dict[str, Any]) -> str:
     console = Console(file=buf, force_terminal=True, width=80)
 
     total = breakdown["total"]
-    tier = (
-        "EXPERT"
-        if total >= 85
-        else "STRONG"
-        if total >= 70
-        else "GOOD"
-        if total >= 50
-        else "BASIC"
-        if total >= 30
-        else "DRAFT"
-    )
-    tier_color = (
-        "bold magenta"
-        if total >= 85
-        else "bold green"
-        if total >= 70
-        else "bold cyan"
-        if total >= 50
-        else "bold yellow"
-        if total >= 30
-        else "dim"
-    )
+    tier = get_tier(total)
+    color = tier_color(total)
 
-    console.print(f"\n[bold]Score: {total:.0f}/100[/bold]  [{tier_color}]{tier}[/{tier_color}]")
+    console.print(
+        f"\n  [{color}]{tier}[/{color}]"
+        f" · [{color}]{total:.0f}[/{color}]"
+    )
     cost_info = breakdown.get("estimated_cost")
     if cost_info:
         console.print(
@@ -530,6 +515,7 @@ def render_compare(data: dict[str, Any]) -> str:
     b = data["prompt_b"]
 
     rows = [
+        ("Tier", get_tier(a["total"]), get_tier(b["total"])),
         ("Score", a["total"], b["total"]),
         ("Word Count", a["word_count"], b["word_count"]),
         ("Structure", a["structure"], b["structure"]),
@@ -541,15 +527,19 @@ def render_compare(data: dict[str, Any]) -> str:
         ("Ambiguity", a["ambiguity_score"], b["ambiguity_score"]),
     ]
     for label, va, vb in rows:
-        delta = vb - va
-        sign = "+" if delta > 0 else ""
-        color = "green" if delta > 0 else "red" if delta < 0 else "dim"
-        table.add_row(
-            label,
-            f"{va:.1f}" if isinstance(va, float) else str(va),
-            f"{vb:.1f}" if isinstance(vb, float) else str(vb),
-            f"[{color}]{sign}{delta:.1f}[/{color}]",
-        )
+        if isinstance(va, str):
+            # Tier row — no numeric delta
+            table.add_row(label, va, vb, "")
+        else:
+            delta = vb - va
+            sign = "+" if delta > 0 else ""
+            color = "green" if delta > 0 else "red" if delta < 0 else "dim"
+            table.add_row(
+                label,
+                f"{va:.1f}" if isinstance(va, float) else str(va),
+                f"{vb:.1f}" if isinstance(vb, float) else str(vb),
+                f"[{color}]{sign}{delta:.1f}[/{color}]",
+            )
 
     console.print(table)
 
