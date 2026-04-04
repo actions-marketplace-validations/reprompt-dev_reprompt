@@ -1,95 +1,106 @@
-# `re:prompt`
+# ctxray
 
-**Linter for your AI prompts** — research-backed scoring, rule-based rewriting, and cross-tool analytics for your AI conversations. No LLM needed, <50ms per prompt.
+**See how you really use AI.**
 
-[![PyPI version](https://img.shields.io/pypi/v/reprompt-cli)](https://pypi.org/project/reprompt-cli/)
-[![Python 3.10+](https://img.shields.io/pypi/pyversions/reprompt-cli)](https://pypi.org/project/reprompt-cli/)
+X-ray your AI coding sessions across Claude Code, Cursor, ChatGPT, and 6 more tools. Discover your patterns, find wasted tokens, catch leaked secrets — all locally, nothing leaves your machine.
+
+[![PyPI version](https://img.shields.io/pypi/v/ctxray)](https://pypi.org/project/ctxray/)
+[![Python 3.10+](https://img.shields.io/pypi/pyversions/ctxray)](https://pypi.org/project/ctxray/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-1892_passing-brightgreen)](https://github.com/reprompt-dev/reprompt/actions)
-[![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](https://github.com/reprompt-dev/reprompt)
+[![Tests](https://img.shields.io/badge/tests-1892_passing-brightgreen)](https://github.com/ctxray/ctxray/actions)
+[![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](https://github.com/ctxray/ctxray)
 
 ## Quick start
 
 ```bash
-pip install reprompt-cli
+pip install ctxray
 
-reprompt check "fix the bug in auth.ts"   # score + lint + rewrite in one command
-reprompt scan                              # auto-detect prompts from your AI tools
-reprompt                                   # see your dashboard
+ctxray scan                    # discover prompts from your AI tools
+ctxray wrapped                 # your AI coding persona + shareable card
+ctxray insights                # your patterns vs research-optimal
+ctxray privacy                 # what sensitive data you've exposed
 ```
 
 ---
 
-![reprompt demo](docs/demo.gif)
+![ctxray demo](docs/demo.gif)
 
-## See it in action
+## What you'll discover
 
-### `reprompt check` -- full diagnostic in one command
+### Your AI coding persona
 
-<img src="docs/screenshots/check-good.svg" alt="reprompt check — good prompt" width="800">
+`ctxray wrapped` generates a Spotify Wrapped-style report of your AI interactions — your persona (Debugger? Architect? Explorer?), top patterns, and a shareable card.
 
-### `reprompt rewrite` -- rule-based prompt improvement
+### Your prompt patterns
 
-<img src="docs/screenshots/rewrite.svg" alt="reprompt rewrite — before/after" width="800">
+`ctxray insights` compares your actual prompting habits against research-backed benchmarks. Are your prompts specific enough? Do you front-load instructions? How much context do you provide?
+
+### Your privacy exposure
+
+`ctxray privacy --deep` scans every prompt you've sent for API keys, tokens, passwords, and PII. See exactly what you've shared with which AI tool.
+
+### Full prompt diagnostic
+
+`ctxray check "your prompt"` scores, lints, and rewrites in one command — no LLM, <50ms.
+
+<img src="docs/screenshots/check-good.svg" alt="ctxray check — good prompt" width="800">
 
 <details>
 <summary>More screenshots</summary>
 
-### `reprompt build` -- assemble prompts from components
+### `ctxray rewrite` — rule-based prompt improvement
 
-<img src="docs/screenshots/build.svg" alt="reprompt build — structured prompt assembly" width="800">
+<img src="docs/screenshots/rewrite.svg" alt="ctxray rewrite — before/after" width="800">
+
+### `ctxray build` — assemble prompts from components
+
+<img src="docs/screenshots/build.svg" alt="ctxray build — structured prompt assembly" width="800">
 
 ### What a bad prompt looks like
 
-<img src="docs/screenshots/check-bad.svg" alt="reprompt check — weak prompt" width="800">
+<img src="docs/screenshots/check-bad.svg" alt="ctxray check — weak prompt" width="800">
 </details>
 
-## What it does
+## All commands
 
-### Score, lint, and rewrite
-
-| Command | Description |
-|---------|-------------|
-| `reprompt check "prompt"` | **Full diagnostic** -- score + lint + rewrite preview in one command |
-| `reprompt score "prompt"` | Research-backed 0-100 scoring with 30+ features |
-| `reprompt rewrite "prompt"` | Rule-based prompt improvement -- filler removal, restructuring, hedging cleanup |
-| `reprompt build "task"` | Build prompts from components -- task, context, files, errors, constraints |
-| `reprompt compress "prompt"` | 4-layer prompt compression (40-60% token savings typical) |
-| `reprompt compare "a" "b"` | Side-by-side prompt analysis (or `--best-worst` for auto-selection) |
-| `reprompt lint` | Configurable linter with CI/GitHub Action support |
-
-### Understand your AI interactions
+### Discover your patterns
 
 | Command | Description |
 |---------|-------------|
-| `reprompt insights` | Personal patterns vs research-optimal benchmarks |
-| `reprompt sessions` | Session quality scores with frustration signal detection |
-| `reprompt agent` | Agent workflow analysis -- error loops, tool patterns, session efficiency |
-| `reprompt repetition` | Cross-session repetition detection -- spot recurring prompts |
-| `reprompt patterns` | Personal prompt weaknesses -- recurring gaps by task type |
-| `reprompt distill` | Extract important turns from conversations with 6-signal scoring |
-| `reprompt projects` | Per-project quality breakdown -- sessions, scores, frustration signals |
+| `ctxray wrapped` | AI coding persona + shareable card |
+| `ctxray insights` | Personal patterns vs research-optimal benchmarks |
+| `ctxray sessions` | Session quality scores with frustration signal detection |
+| `ctxray agent` | Agent workflow analysis — error loops, tool patterns, efficiency |
+| `ctxray repetition` | Cross-session repetition detection — spot recurring prompts |
+| `ctxray patterns` | Personal prompt weaknesses — recurring gaps by task type |
+| `ctxray distill` | Extract important turns from conversations with 6-signal scoring |
+| `ctxray projects` | Per-project quality breakdown |
+| `ctxray style` | Prompting fingerprint with `--trends` for evolution tracking |
+| `ctxray privacy` | See what data you sent where — file paths, errors, PII exposure |
 
-<details>
-<summary>All commands</summary>
+### Optimize your prompts
+
+| Command | Description |
+|---------|-------------|
+| `ctxray check "prompt"` | **Full diagnostic** — score + lint + rewrite in one command |
+| `ctxray score "prompt"` | Research-backed 0-100 scoring with 30+ features |
+| `ctxray rewrite "prompt"` | Rule-based improvement — filler removal, restructuring, hedging cleanup |
+| `ctxray build "task"` | Build prompts from components — task, context, files, errors, constraints |
+| `ctxray compress "prompt"` | 4-layer prompt compression (40-60% token savings typical) |
+| `ctxray compare "a" "b"` | Side-by-side prompt analysis (or `--best-worst` for auto-selection) |
+| `ctxray lint` | Configurable linter with CI/GitHub Action support |
 
 ### Manage
 
 | Command | Description |
 |---------|-------------|
-| `reprompt` | Instant dashboard -- prompts, sessions, avg score, top categories |
-| `reprompt scan` | Auto-discover prompts from 9 AI tools |
-| `reprompt privacy` | See what data you sent where -- file paths, errors, PII exposure |
-| `reprompt privacy --deep` | Scan for sensitive content: API keys, tokens, passwords, PII |
-| `reprompt report` | Full analytics: hot phrases, clusters, patterns (`--html` for dashboard) |
-| `reprompt digest` | Weekly summary comparing current vs previous period |
-| `reprompt wrapped` | Prompt DNA report -- persona, scores, shareable card |
-| `reprompt template save\|list\|use` | Save and reuse your best prompts |
-| `reprompt style` | Prompting fingerprint with `--trends` for evolution tracking |
-| `reprompt distill --export` | Recover context when a session runs out -- paste into new session |
-| `reprompt init` | Generate `.reprompt.toml` config for your project |
-
-</details>
+| `ctxray` | Instant dashboard — prompts, sessions, avg score, top categories |
+| `ctxray scan` | Auto-discover prompts from 9 AI tools |
+| `ctxray report` | Full analytics: hot phrases, clusters, patterns (`--html` for dashboard) |
+| `ctxray digest` | Weekly summary comparing current vs previous period |
+| `ctxray template save\|list\|use` | Save and reuse your best prompts |
+| `ctxray distill --export` | Recover context when a session runs out — paste into new session |
+| `ctxray init` | Generate `.ctxray.toml` config for your project |
 
 ## Supported AI tools
 
@@ -102,32 +113,32 @@ reprompt                                   # see your dashboard
 | Gemini CLI | JSON | Yes |
 | Cline (VS Code) | JSON | Yes |
 | OpenClaw / OpenCode | JSON | Yes |
-| ChatGPT | JSON | Via `reprompt import` |
-| Claude.ai | JSON/ZIP | Via `reprompt import` |
+| ChatGPT | JSON | Via `ctxray import` |
+| Claude.ai | JSON/ZIP | Via `ctxray import` |
 
 ## Installation
 
 ```bash
-pip install reprompt-cli            # core (all features, zero config)
-pip install reprompt-cli[chinese]   # + Chinese prompt analysis (jieba)
-pip install reprompt-cli[mcp]       # + MCP server for Claude Code / Continue.dev / Zed
+pip install ctxray              # core (all features, zero config)
+pip install ctxray[chinese]     # + Chinese prompt analysis (jieba)
+pip install ctxray[mcp]         # + MCP server for Claude Code / Continue.dev / Zed
 ```
 
 ### Auto-scan after every session
 
 ```bash
-reprompt install-hook               # adds post-session hook to Claude Code
+ctxray install-hook             # adds post-session hook to Claude Code
 ```
 
 ### Browser extension
 
-Capture prompts from ChatGPT, Claude.ai, and Gemini directly in your browser. Live score badge shows prompt quality as you type -- click "Rewrite & Apply" to improve your prompt and replace the text directly in the input box.
+Capture prompts from ChatGPT, Claude.ai, and Gemini directly in your browser. Live quality badge shows prompt tier as you type — click "Rewrite & Apply" to improve and replace the text directly in the input box.
 
 1. **Install the extension** from [Chrome Web Store](https://chromewebstore.google.com/detail/reprompt/ojdccpagaanchmkninlbgbgemdcjckhn) or [Firefox Add-ons](https://addons.mozilla.org/addon/reprompt-cli/)
-2. **Connect to the CLI:** `reprompt install-extension`
-3. **Verify:** `reprompt extension-status`
+2. **Connect to the CLI:** `ctxray install-extension`
+3. **Verify:** `ctxray extension-status`
 
-Captured prompts sync locally via Native Messaging -- nothing leaves your machine.
+Captured prompts sync locally via Native Messaging — nothing leaves your machine.
 
 ### CI integration
 
@@ -142,77 +153,55 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: write    # needed for PR comments
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: reprompt-dev/reprompt@main
+      - uses: ctxray/ctxray@main
         with:
-          score-threshold: 50   # fail if avg prompt score < 50
-          strict: true          # fail on warnings too
-          comment-on-pr: true   # post quality report as PR comment
+          score-threshold: 50
+          strict: true
+          comment-on-pr: true
 ```
-
-<details>
-<summary>PR comment report example</summary>
-
-When `comment-on-pr: true`, every PR gets a quality report:
-
-```
-## reprompt lint Passed
-
-| Metric          | Value          |
-|-----------------|----------------|
-| Prompts checked | 12             |
-| Errors          | 0              |
-| Warnings        | 2              |
-| Avg Score       | 62/100 (threshold: 50) |
-
-2 violation(s) [click to expand]
-```
-
-The comment updates on each push -- no duplicates. Uses `GITHUB_TOKEN` (no extra secrets needed).
-
-</details>
 
 #### pre-commit
 
 ```yaml
 # .pre-commit-config.yaml
 repos:
-  - repo: https://github.com/reprompt-dev/reprompt
-    rev: v2.5.0
+  - repo: https://github.com/ctxray/ctxray
+    rev: v3.0.0
     hooks:
-      - id: reprompt-lint
+      - id: ctxray-lint
 ```
 
 #### Direct CLI
 
 ```bash
-reprompt lint --score-threshold 50  # exit 1 if avg score < 50
-reprompt lint --strict              # exit 1 on warnings
-reprompt lint --json                # machine-readable output
+ctxray lint --score-threshold 50  # exit 1 if avg score < 50
+ctxray lint --strict              # exit 1 on warnings
+ctxray lint --json                # machine-readable output
 ```
 
 #### Project configuration
 
 ```bash
-reprompt init   # generates .reprompt.toml with all rules documented
+ctxray init   # generates .ctxray.toml with all rules documented
 ```
 
 ```toml
-# .reprompt.toml (or [tool.reprompt.lint] in pyproject.toml)
+# .ctxray.toml (or [tool.ctxray.lint] in pyproject.toml)
 [lint]
-score-threshold = 50       # fail if avg score < 50
+score-threshold = 50
 
 [lint.rules]
-min-length = 20            # error if prompt < 20 chars (0 = off)
-short-prompt = 40          # warning if < 40 chars (0 = off)
-vague-prompt = true        # error on "fix it" etc (false = off)
+min-length = 20
+short-prompt = 40
+vague-prompt = true
 debug-needs-reference = true
 ```
 
 <details>
-<summary>Prompt Science -- research foundation</summary>
+<summary>Prompt Science — research foundation</summary>
 
 ## Prompt Science
 
@@ -228,40 +217,20 @@ Scoring is calibrated against 10 peer-reviewed papers covering 30+ features acro
 
 Cross-validated findings that inform our engine:
 
-- **Position bias is architectural** -- present at initialization, not learned. Front-loading instructions is effective for prompts under 50% of context window (3 papers agree)
-- **Moderate compression improves output** -- rule-based filler removal doesn't just save tokens, it enhances LLM performance ([2505.00019](https://arxiv.org/abs/2505.00019))
-- **Prompt quality is independently measurable** -- prompt-only scoring predicts output quality without seeing the response (ACL 2025, [2503.10084](https://arxiv.org/abs/2503.10084))
+- **Position bias is architectural** — present at initialization, not learned. Front-loading instructions is effective for prompts under 50% of context window (3 papers agree)
+- **Moderate compression improves output** — rule-based filler removal doesn't just save tokens, it enhances LLM performance ([2505.00019](https://arxiv.org/abs/2505.00019))
+- **Prompt quality is independently measurable** — prompt-only scoring predicts output quality without seeing the response (ACL 2025, [2503.10084](https://arxiv.org/abs/2503.10084))
 
 All analysis runs locally in <1ms per prompt. No LLM calls, no network requests.
 
 </details>
 
 <details>
-<summary>How it works -- architecture</summary>
+<summary>How it works — architecture</summary>
 
 ## How it works
 
 ```
-                          ┌─────────────────────────┐
-                          │     reprompt check       │  <- single entry point
-                          └────────┬────────────────┘
-                                   │
-               ┌───────────────────┼───────────────────┐
-               v                   v                   v
-        ┌─────────────┐   ┌──────────────┐   ┌──────────────┐
-        │  Score (0-100) │   │   Lint       │   │   Rewrite    │
-        │  30+ features  │   │   rule-based │   │   4 layers   │
-        │  5 dimensions  │   │   CI-ready   │   │   no LLM     │
-        └──────┬──────┘   └──────┬───────┘   └──────┬───────┘
-               │                  │                   │
-               └───────────────────┼───────────────────┘
-                                   v
-                          ┌──────────────────┐
-                          │  Unified Report   │
-                          │  score + issues + │
-                          │  rewritten prompt │
-                          └──────────────────┘
-
  Data sources:
  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
  │Claude Code│ │  Cursor  │ │  Aider   │ │ ChatGPT  │ │ 5 more.. │
@@ -274,16 +243,16 @@ All analysis runs locally in <1ms per prompt. No LLM calls, no network requests.
               v                  v                  v
         ┌──────────┐     ┌──────────────┐    ┌──────────┐
         │ insights │     │  patterns    │    │ sessions │
-        │ style    │     │  repetition  │    │ projects │
-        │ digest   │     │  privacy     │    │ agent    │
+        │ wrapped  │     │  repetition  │    │ projects │
+        │ style    │     │  privacy     │    │ agent    │
         └──────────┘     └──────────────┘    └──────────┘
 ```
 
 **Key design decisions:**
-- **Pure rules, no LLM** -- scoring and rewriting use regex + TF-IDF + research heuristics. Deterministic, private, <1ms per prompt.
-- **Adapter pattern** -- each AI tool gets a parser that normalizes to a common `Prompt` model. Adding a new tool = one file.
-- **Two-layer dedup** -- SHA-256 for exact matches, TF-IDF cosine similarity for near-dupes. Handles the "same prompt, slightly different wording" problem.
-- **Research-calibrated** -- 10 peer-reviewed papers inform the scoring weights. Not vibes, not benchmarks-on-benchmarks.
+- **Pure rules, no LLM** — scoring and rewriting use regex + TF-IDF + research heuristics. Deterministic, private, <1ms per prompt.
+- **Adapter pattern** — each AI tool gets a parser that normalizes to a common `Prompt` model. Adding a new tool = one file.
+- **Two-layer dedup** — SHA-256 for exact matches, TF-IDF cosine similarity for near-dupes.
+- **Research-calibrated** — 10 peer-reviewed papers inform the scoring weights.
 
 </details>
 
@@ -292,36 +261,43 @@ All analysis runs locally in <1ms per prompt. No LLM calls, no network requests.
 
 ## Conversation Distillation
 
-`reprompt distill` scores every turn in a conversation using 6 signals:
+`ctxray distill` scores every turn in a conversation using 6 signals:
 
-- **Position** -- first/last turns carry framing and conclusions
-- **Length** -- substantial turns contain more information
-- **Tool trigger** -- turns that cause tool calls are action-driving
-- **Error recovery** -- turns that follow errors show problem-solving
-- **Semantic shift** -- topic changes mark conversation boundaries
-- **Uniqueness** -- novel phrasing vs repetitive follow-ups
+- **Position** — first/last turns carry framing and conclusions
+- **Length** — substantial turns contain more information
+- **Tool trigger** — turns that cause tool calls are action-driving
+- **Error recovery** — turns that follow errors show problem-solving
+- **Semantic shift** — topic changes mark conversation boundaries
+- **Uniqueness** — novel phrasing vs repetitive follow-ups
 
 Session type (debugging, feature-dev, exploration, refactoring) is auto-detected and signal weights adapt accordingly.
 
 </details>
 
+## Why ctxray?
+
+After [Promptfoo joined OpenAI](https://openai.com/index/openai-to-acquire-promptfoo/) and [Humanloop joined Anthropic](https://techcrunch.com/2025/08/13/anthropic-nabs-humanloop-team-as-competition-for-enterprise-ai-talent-heats-up/), ctxray is the independent, open-source alternative for understanding your AI interactions.
+
+- **100% local** — your prompts never leave your machine
+- **No LLM required** — pure rule-based analysis, <50ms per prompt
+- **9 AI tools** — the only tool that works across Claude Code, Cursor, ChatGPT, and more
+- **Research-backed** — calibrated against 10 peer-reviewed papers, not vibes
+
+> Previously published as `reprompt-cli`. Same tool, new name, clean namespace.
+
 ## Privacy
 
 - All analysis runs locally. No prompts leave your machine.
-- `reprompt privacy` shows exactly what you've sent to which AI tool.
-- Optional telemetry sends only anonymous 26-dimension feature vectors -- never prompt text.
+- `ctxray privacy` shows exactly what you've sent to which AI tool.
+- Optional telemetry sends only anonymous feature vectors — never prompt text.
 - Open source: audit exactly what's collected.
-
-[Privacy policy](https://getreprompt.dev/privacy)
 
 ## Links
 
-- **Website:** [getreprompt.dev](https://getreprompt.dev)
+- **PyPI:** [ctxray](https://pypi.org/project/ctxray/)
 - **Chrome Extension:** [Chrome Web Store](https://chromewebstore.google.com/detail/reprompt/ojdccpagaanchmkninlbgbgemdcjckhn)
 - **Firefox Add-on:** [Firefox Add-ons](https://addons.mozilla.org/addon/reprompt-cli/)
-- **PyPI:** [reprompt-cli](https://pypi.org/project/reprompt-cli/)
 - **Changelog:** [CHANGELOG.md](CHANGELOG.md)
-- **Privacy:** [getreprompt.dev/privacy](https://getreprompt.dev/privacy)
 
 ## Contributing
 
