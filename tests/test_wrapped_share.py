@@ -38,9 +38,7 @@ def _make_mock_report():
 class TestWrappedShare:
     @patch("ctxray.commands.wrapped._get_install_id", return_value="a" * 64)
     @patch("ctxray.commands.wrapped.copy_to_clipboard", return_value=True)
-    @patch(
-        "ctxray.commands.wrapped.upload_share", return_value="https://getreprompt.dev/w/test1234"
-    )
+    @patch("ctxray.commands.wrapped.upload_share", return_value="https://example.com/w/test1234")
     @patch("ctxray.core.wrapped.build_wrapped")
     @patch("ctxray.storage.db.PromptDB")
     @patch("ctxray.config.Settings")
@@ -56,12 +54,13 @@ class TestWrappedShare:
         mock_settings.return_value = MagicMock(
             db_path="/tmp/test.db",
             config_path="/tmp/config.toml",
+            share_endpoint="https://example.com/api/share",
         )
         mock_build.return_value = _make_mock_report()
 
         result = runner.invoke(app, ["--share"])
         assert result.exit_code == 0, f"Output: {result.output}\nException: {result.exception}"
-        assert "https://getreprompt.dev/w/test1234" in result.output
+        assert "https://example.com/w/test1234" in result.output
         mock_upload.assert_called_once()
 
     @patch("ctxray.commands.wrapped._get_install_id", return_value="a" * 64)
@@ -80,9 +79,32 @@ class TestWrappedShare:
         mock_settings.return_value = MagicMock(
             db_path="/tmp/test.db",
             config_path="/tmp/config.toml",
+            share_endpoint="https://example.com/api/share",
         )
         mock_build.return_value = _make_mock_report()
 
         result = runner.invoke(app, ["--share"])
         assert result.exit_code == 0, f"Output: {result.output}\nException: {result.exception}"
         assert "auth failed" in result.output or "error" in result.output.lower()
+
+    @patch("ctxray.core.wrapped.build_wrapped")
+    @patch("ctxray.storage.db.PromptDB")
+    @patch("ctxray.config.Settings")
+    def test_share_without_endpoint_shows_config_message(
+        self,
+        mock_settings,
+        mock_db,
+        mock_build,
+    ):
+        """Default behavior: no endpoint configured → no network call, clear message."""
+        mock_settings.return_value = MagicMock(
+            db_path="/tmp/test.db",
+            config_path="/tmp/config.toml",
+            share_endpoint="",  # default, empty
+        )
+        mock_build.return_value = _make_mock_report()
+
+        result = runner.invoke(app, ["--share"])
+        assert result.exit_code == 0
+        assert "opt-in" in result.output.lower() or "not configured" in result.output.lower()
+        assert "CTXRAY_SHARE_ENDPOINT" in result.output

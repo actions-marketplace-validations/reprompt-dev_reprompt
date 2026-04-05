@@ -458,7 +458,11 @@ class TestShareClient503:
             url="", code=503, msg="Service Unavailable", hdrs=None, fp=None
         )
         with pytest.raises(RuntimeError, match="unavailable"):
-            upload_share(install_id="a" * 64, report_json="{}")
+            upload_share(
+                install_id="a" * 64,
+                report_json="{}",
+                endpoint="https://example.com/api/share",
+            )
 
     @patch("ctxray.sharing.client.urlopen")
     def test_generic_http_error_raises(self, mock_urlopen):
@@ -470,7 +474,11 @@ class TestShareClient503:
             url="", code=500, msg="Server Error", hdrs=None, fp=None
         )
         with pytest.raises(RuntimeError, match="HTTP 500"):
-            upload_share(install_id="a" * 64, report_json="{}")
+            upload_share(
+                install_id="a" * 64,
+                report_json="{}",
+                endpoint="https://example.com/api/share",
+            )
 
 
 # ---------------------------------------------------------------------------

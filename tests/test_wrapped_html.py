@@ -37,11 +37,11 @@ class TestRenderWrappedHTML:
         assert "<!doctype html>" in result.lower()
 
     def test_self_contained_no_external_resources(self) -> None:
-        """Only getreprompt.dev URLs are allowed; no external CSS/JS links."""
+        """Only github.com/ctxray URLs are allowed; no external CSS/JS links."""
         result = render_wrapped_html(_sample_report())
         external_urls = re.findall(r"https?://[^\"\\'>\s]+", result)
         for url in external_urls:
-            assert "getreprompt.dev" in url, f"Unexpected external URL: {url}"
+            assert "github.com/ctxray" in url, f"Unexpected external URL: {url}"
 
     def test_has_inline_style_tag(self) -> None:
         result = render_wrapped_html(_sample_report())
@@ -84,7 +84,7 @@ class TestRenderWrappedHTML:
 
     def test_contains_footer_link(self) -> None:
         result = render_wrapped_html(_sample_report())
-        assert "getreprompt.dev" in result
+        assert "github.com/ctxray" in result
         assert "ctxray" in result.lower()
 
     def test_score_color_green_for_72(self) -> None:

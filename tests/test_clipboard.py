@@ -13,7 +13,7 @@ class TestCopyToClipboard:
         mock_run.return_value = MagicMock(returncode=0)
         with patch("ctxray.sharing.clipboard.sys") as mock_sys:
             mock_sys.platform = "darwin"
-            result = copy_to_clipboard("https://getreprompt.dev/w/abc")
+            result = copy_to_clipboard("https://example.com/w/abc")
         assert result is True
         mock_run.assert_called_once()
         assert mock_run.call_args[0][0] == ["pbcopy"]

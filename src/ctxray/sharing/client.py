@@ -1,4 +1,8 @@
-"""HTTP client for the share API -- HMAC-SHA256 signed uploads."""
+"""HTTP client for the share API -- HMAC-SHA256 signed uploads.
+
+Share is opt-in. ctxray does not host a share service. Users must configure
+their own endpoint via CTXRAY_SHARE_ENDPOINT env var or config.toml.
+"""
 
 from __future__ import annotations
 
@@ -11,8 +15,6 @@ from urllib.request import Request, urlopen
 
 logger = logging.getLogger(__name__)
 
-SHARE_ENDPOINT = "https://getreprompt.dev/api/share"
-
 
 def sign_request(install_id: str, body: str) -> str:
     """Compute HMAC-SHA256(install_id, body) -> hex digest."""
@@ -23,9 +25,18 @@ def upload_share(
     *,
     install_id: str,
     report_json: str,
-    endpoint: str = SHARE_ENDPOINT,
+    endpoint: str,
 ) -> str:
-    """Upload a WrappedReport to the share API. Returns the share URL."""
+    """Upload a WrappedReport to the share API. Returns the share URL.
+
+    Requires an explicit endpoint — ctxray does not host a share service.
+    """
+    if not endpoint:
+        raise RuntimeError(
+            "Share endpoint not configured. ctxray does not host a share service.\n"
+            "Set CTXRAY_SHARE_ENDPOINT=https://your-endpoint.example/share\n"
+            'Or in ~/.config/ctxray/config.toml: share_endpoint = "https://..."'
+        )
     signature = sign_request(install_id, report_json)
 
     request = Request(

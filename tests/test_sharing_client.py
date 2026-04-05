@@ -34,7 +34,7 @@ class TestUploadShare:
         mock_response = MagicMock()
         mock_response.status = 200
         mock_response.read.return_value = json.dumps(
-            {"url": "https://getreprompt.dev/w/abc12345"}
+            {"url": "https://example.com/w/abc12345"}
         ).encode()
         mock_response.__enter__ = lambda s: s
         mock_response.__exit__ = MagicMock(return_value=False)
@@ -43,8 +43,9 @@ class TestUploadShare:
         url = upload_share(
             install_id="a" * 64,
             report_json='{"total_prompts": 100}',
+            endpoint="https://example.com/api/share",
         )
-        assert url == "https://getreprompt.dev/w/abc12345"
+        assert url == "https://example.com/w/abc12345"
 
     @patch("ctxray.sharing.client.urlopen")
     def test_401_raises_auth_error(self, mock_urlopen):
@@ -54,10 +55,23 @@ class TestUploadShare:
             url="", code=401, msg="Unauthorized", hdrs=None, fp=None
         )
         with pytest.raises(RuntimeError, match="auth"):
-            upload_share(install_id="a" * 64, report_json="{}")
+            upload_share(
+                install_id="a" * 64,
+                report_json="{}",
+                endpoint="https://example.com/api/share",
+            )
 
     @patch("ctxray.sharing.client.urlopen")
     def test_network_error_raises(self, mock_urlopen):
         mock_urlopen.side_effect = ConnectionError("offline")
         with pytest.raises(RuntimeError, match="network"):
-            upload_share(install_id="a" * 64, report_json="{}")
+            upload_share(
+                install_id="a" * 64,
+                report_json="{}",
+                endpoint="https://example.com/api/share",
+            )
+
+    def test_empty_endpoint_raises_config_error(self):
+        """No network call when endpoint is empty — preserves 'no data leaves' guarantee."""
+        with pytest.raises(RuntimeError, match="not configured"):
+            upload_share(install_id="a" * 64, report_json="{}", endpoint="")

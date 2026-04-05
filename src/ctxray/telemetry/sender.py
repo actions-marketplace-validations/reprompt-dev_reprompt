@@ -14,7 +14,7 @@ from urllib.request import Request, urlopen
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_ENDPOINT = "https://t.getreprompt.dev/v1/events"
+DEFAULT_ENDPOINT = ""  # Telemetry is opt-in; configure via CTXRAY_TELEMETRY_ENDPOINT
 
 
 def send_batch(
@@ -38,6 +38,10 @@ def send_batch(
     """
     if not event_payloads:
         return True
+
+    if not endpoint:
+        # No endpoint configured — skip send, preserve "no data leaves" guarantee
+        return False
 
     body = json.dumps(
         {

@@ -87,6 +87,9 @@ class Settings(BaseSettings):
     # Dedup
     dedup_threshold: float = 0.85
 
+    # Share endpoint (opt-in; empty = disabled, no network calls)
+    share_endpoint: str = ""
+
     # Library
     library_min_frequency: int = 3
     library_categories: list[str] = [

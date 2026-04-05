@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-from ctxray.telemetry.sender import DEFAULT_ENDPOINT, send_batch
+from ctxray.telemetry.sender import send_batch
+
+TEST_ENDPOINT = "https://example.com/v1/events"
 
 
 class TestSendBatch:
@@ -13,6 +15,13 @@ class TestSendBatch:
         """Sending empty list should return True (nothing to do)."""
         result = send_batch([])
         assert result is True
+
+    def test_send_batch_empty_endpoint_skips(self):
+        """No endpoint configured → no network call, returns False."""
+        with patch("ctxray.telemetry.sender.urlopen") as mock_urlopen:
+            result = send_batch(['{"test": true}'], endpoint="")
+            assert result is False
+            mock_urlopen.assert_not_called()
 
     @patch("ctxray.telemetry.sender.urlopen")
     def test_send_batch_posts_json(self, mock_urlopen: MagicMock):
@@ -26,14 +35,14 @@ class TestSendBatch:
             '{"install_id": "a", "score_total": 72.0}',
             '{"install_id": "b", "score_total": 55.0}',
         ]
-        result = send_batch(events)
+        result = send_batch(events, endpoint=TEST_ENDPOINT)
         assert result is True
 
         # Verify the request was made
         mock_urlopen.assert_called_once()
         call_args = mock_urlopen.call_args
         request = call_args[0][0]
-        assert request.full_url == DEFAULT_ENDPOINT
+        assert request.full_url == TEST_ENDPOINT
         assert request.get_header("Content-type") == "application/json"
 
         # Verify payload structure
@@ -47,7 +56,7 @@ class TestSendBatch:
 
         mock_urlopen.side_effect = URLError("timeout")
         events = ['{"test": true}']
-        result = send_batch(events)
+        result = send_batch(events, endpoint=TEST_ENDPOINT)
         assert result is False
 
     @patch("ctxray.telemetry.sender.urlopen")
@@ -56,10 +65,10 @@ class TestSendBatch:
         from urllib.error import HTTPError
 
         mock_urlopen.side_effect = HTTPError(
-            DEFAULT_ENDPOINT, 500, "Internal Server Error", {}, BytesIO(b"")
+            TEST_ENDPOINT, 500, "Internal Server Error", {}, BytesIO(b"")
         )
         events = ['{"test": true}']
-        result = send_batch(events)
+        result = send_batch(events, endpoint=TEST_ENDPOINT)
         assert result is False
 
     @patch("ctxray.telemetry.sender.urlopen")
@@ -70,7 +79,7 @@ class TestSendBatch:
         mock_response.__exit__ = MagicMock(return_value=False)
         mock_urlopen.return_value = mock_response
 
-        send_batch(['{"x": 1}'])
+        send_batch(['{"x": 1}'], endpoint=TEST_ENDPOINT)
         call_args = mock_urlopen.call_args
         assert call_args[1].get("timeout") == 2
 
@@ -91,5 +100,5 @@ class TestSendBatch:
     def test_send_batch_generic_exception_returns_false(self, mock_urlopen: MagicMock):
         """Any unexpected exception should be caught and return False."""
         mock_urlopen.side_effect = OSError("network error")
-        result = send_batch(['{"test": true}'])
+        result = send_batch(['{"test": true}'], endpoint=TEST_ENDPOINT)
         assert result is False

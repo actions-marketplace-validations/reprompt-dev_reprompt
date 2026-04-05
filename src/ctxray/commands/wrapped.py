@@ -37,6 +37,16 @@ def wrapped(
     report = build_wrapped(db)
 
     if share:
+        if not settings.share_endpoint:
+            console.print(
+                "\n[yellow]Share is opt-in.[/yellow] ctxray does not host a share service.\n"
+                "Configure your own endpoint to enable sharing:\n"
+                "  [bold]CTXRAY_SHARE_ENDPOINT[/bold]=https://your-endpoint.example/share\n"
+                "  or in ~/.config/ctxray/config.toml: "
+                '[bold]share_endpoint[/bold] = "https://..."\n'
+                "\n[dim]Tip: use --html to save a self-contained card you can share directly.[/dim]"
+            )
+            return
         try:
             from ctxray.config import _default_config_path
 
@@ -45,7 +55,11 @@ def wrapped(
             share_payload.pop("task_distribution", None)
             report_json = json_mod.dumps(share_payload)
 
-            url = upload_share(install_id=install_id, report_json=report_json)
+            url = upload_share(
+                install_id=install_id,
+                report_json=report_json,
+                endpoint=settings.share_endpoint,
+            )
             console.print(f"\n[bold green]Share link:[/bold green] {url}")
 
             if copy_to_clipboard(url):
