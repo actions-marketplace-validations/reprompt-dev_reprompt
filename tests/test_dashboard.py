@@ -298,7 +298,7 @@ class TestDashboardOutput:
         output = render_dashboard(data)
         assert "47" in output
 
-    def test_render_data_state_score_shown(self):
+    def test_render_data_state_sessions_shown(self):
         from ctxray.output.dashboard_terminal import render_dashboard
 
         data = DashboardData(
@@ -309,20 +309,23 @@ class TestDashboardOutput:
             avg_compressibility=0.15,
         )
         output = render_dashboard(data)
-        assert "65" in output
+        assert "5" in output  # session count
+        assert "20" in output  # prompt count
 
-    def test_render_data_state_compressibility(self):
+    def test_render_data_state_tool_names(self):
         from ctxray.output.dashboard_terminal import render_dashboard
 
         data = DashboardData(
             has_data=True,
             prompt_count=20,
             session_count=5,
+            tool_names=["claude-code", "cursor"],
             avg_score={"overall": 50},
             avg_compressibility=0.23,
         )
         output = render_dashboard(data)
-        assert "23%" in output
+        assert "claude-code" in output
+        assert "cursor" in output
 
     def test_render_data_state_long_sessions(self):
         from ctxray.output.dashboard_terminal import render_dashboard
@@ -337,7 +340,7 @@ class TestDashboardOutput:
         )
         output = render_dashboard(data)
         assert "3" in output
-        assert "distill" in output.lower()
+        assert "60+ turns" in output
 
     def test_render_data_state_suggestions(self):
         from ctxray.output.dashboard_terminal import render_dashboard
@@ -350,9 +353,9 @@ class TestDashboardOutput:
             avg_compressibility=0.2,
         )
         output = render_dashboard(data)
-        assert "distill" in output.lower()
+        assert "wrapped" in output.lower()
         assert "insights" in output.lower()
-        assert "compress" in output.lower()
+        assert "privacy" in output.lower()
 
 
 class TestDashboardDataclass:
@@ -364,6 +367,7 @@ class TestDashboardDataclass:
         assert data.discoveries == []
         assert data.prompt_count == 0
         assert data.session_count == 0
+        assert data.tool_names == []
         assert data.avg_score == {}
         assert data.avg_compressibility == 0.0
         assert data.long_sessions == 0

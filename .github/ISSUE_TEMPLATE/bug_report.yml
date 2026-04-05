@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in reprompt
+description: Report a bug in ctxray
 labels: [bug]
 body:
   - type: textarea
@@ -17,8 +17,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: reprompt version
-      description: "Output of `reprompt --version` (if available)"
+      label: ctxray version
+      description: "Output of `ctxray --version` (if available)"
   - type: input
     id: python-version
     attributes:

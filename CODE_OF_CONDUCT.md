@@ -6,6 +6,6 @@ We are committed to providing a welcoming and inclusive experience for everyone.
 
 ## Reporting
 
-If you experience or witness unacceptable behavior, please report it by opening a [GitHub issue](https://github.com/reprompt-dev/reprompt/issues) or contacting the maintainers directly.
+If you experience or witness unacceptable behavior, please report it by opening a [GitHub issue](https://github.com/ctxray/ctxray/issues) or contacting the maintainers directly.
 
 Reports will be reviewed and addressed promptly.

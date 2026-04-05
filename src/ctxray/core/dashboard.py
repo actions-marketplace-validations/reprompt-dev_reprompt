@@ -23,6 +23,7 @@ class DashboardData:
     # Data state
     prompt_count: int = 0
     session_count: int = 0
+    tool_names: list[str] = field(default_factory=list)
     avg_score: dict[str, float] = field(default_factory=dict)
     avg_compressibility: float = 0.0
     long_sessions: int = 0  # sessions with 60+ turns
@@ -125,8 +126,9 @@ def build_dashboard_data(db: PromptDB) -> DashboardData:
     # Count unique sessions in recent prompts
     session_ids = {p.get("session_id", "") for p in recent if p.get("session_id")}
 
-    # Count long sessions (60+ prompts in a single session)
+    # Count long sessions (60+ prompts in a single session) + distinct tools
     long_sessions = 0
+    tool_names: list[str] = []
     try:
         conn = db._conn()
         try:
@@ -135,6 +137,10 @@ def build_dashboard_data(db: PromptDB) -> DashboardData:
                 " WHERE duplicate_of IS NULL GROUP BY session_id HAVING cnt >= 60"
             ).fetchall()
             long_sessions = len(rows)
+            tool_rows = conn.execute(
+                "SELECT DISTINCT source FROM prompts WHERE source != ''"
+            ).fetchall()
+            tool_names = sorted(r[0] for r in tool_rows)
         finally:
             conn.close()
     except Exception:
@@ -144,6 +150,7 @@ def build_dashboard_data(db: PromptDB) -> DashboardData:
         has_data=True,
         prompt_count=len(recent),
         session_count=len(session_ids),
+        tool_names=tool_names,
         avg_score=_compute_avg_score(db),
         avg_compressibility=_compute_avg_compressibility(db),
         long_sessions=long_sessions,

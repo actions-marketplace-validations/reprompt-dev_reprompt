@@ -1,6 +1,6 @@
-# Contributing to reprompt
+# Contributing to ctxray
 
-Thanks for your interest in contributing! reprompt is an open-source prompt intelligence tool, and contributions of all kinds are welcome.
+Thanks for your interest in contributing! ctxray is an open-source AI session analysis tool, and contributions of all kinds are welcome.
 
 ## Quick Links
 
@@ -13,7 +13,7 @@ Thanks for your interest in contributing! reprompt is an open-source prompt inte
 
 ```bash
 git clone https://github.com/ctxray/ctxray
-cd reprompt
+cd ctxray
 uv venv
 uv pip install -e ".[dev]"
 ```
@@ -24,7 +24,7 @@ CI enforces **88% minimum coverage**. Run locally before pushing:
 
 ```bash
 uv run pytest tests/ -v
-uv run pytest tests/ -v --cov=reprompt --cov-fail-under=88  # with coverage gate
+uv run pytest tests/ -v --cov=ctxray --cov-fail-under=88  # with coverage gate
 ```
 
 ## Code Style

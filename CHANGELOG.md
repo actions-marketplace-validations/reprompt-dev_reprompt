@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+> **Note:** Commands documented as `reprompt` in entries before v3.0.0 are now `ctxray`.
+
+## [3.0.0] - 2026-04-04
+
+### Changed
+- **Renamed to ctxray** — package, CLI command, and GitHub org all renamed from `reprompt`/`reprompt-cli` to `ctxray`. PyPI: [ctxray](https://pypi.org/project/ctxray/). CLI: `ctxray`.
+- **New positioning** — "See how you really use AI." Discovery-first: `ctxray scan → wrapped → insights → privacy` is the new hero flow.
+- **Config paths migrated** — `~/.config/reprompt/` → `~/.config/ctxray/`, env prefix `REPROMPT_` → `CTXRAY_`, lint config `.reprompt.toml` → `.ctxray.toml`.
+- **Backward compatibility** — `pip install reprompt-cli` now installs ctxray as a dependency (redirect package v2.5.1). GitHub repo URL auto-redirects.
+
 ## [2.2.2] - 2026-04-01
 
 ### Changed

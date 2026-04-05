@@ -30,7 +30,7 @@ def _render_zero_state(console: Console, data: DashboardData) -> str:
     console.print()
     console.print(
         Panel(
-            "[bold]ctxray[/bold] -- prompt intelligence for AI coding tools",
+            "[bold]ctxray[/bold] -- See how you really use AI",
             border_style="cyan",
         )
     )
@@ -78,38 +78,32 @@ def _render_data_state(console: Console, data: DashboardData) -> str:
     """Render the data-state dashboard (has imported prompts)."""
     console.print()
 
-    # Stats header
-    overall = data.avg_score.get("overall", 0)
-    comp_pct = f"{data.avg_compressibility * 100:.0f}%"
-
+    # Stats header — discovery metrics first
     stats_lines = [
-        f"  [bold]Prompts (7d):[/bold]  {data.prompt_count}",
-        f"  [bold]Sessions:[/bold]      {data.session_count}",
-        f"  [bold]Avg Score:[/bold]     {overall}/100",
-        f"  [bold]Compressibility:[/bold] {comp_pct}",
+        f"  [bold]Sessions (7d):[/bold]  {data.session_count}",
+        f"  [bold]Prompts:[/bold]        {data.prompt_count}",
     ]
+
+    if data.tool_names:
+        tools_str = ", ".join(data.tool_names)
+        stats_lines.append(f"  [bold]AI Tools:[/bold]       {len(data.tool_names)} ({tools_str})")
 
     if data.long_sessions > 0:
         stats_lines.append(f"  [bold]Long Sessions:[/bold] {data.long_sessions} (60+ turns)")
 
-    console.print(Panel("\n".join(stats_lines), title="ctxray", border_style="cyan"))
+    console.print(
+        Panel(
+            "\n".join(stats_lines),
+            title="ctxray — See how you really use AI",
+            border_style="cyan",
+        )
+    )
 
-    # Per-task-type scores
-    task_scores = {k: v for k, v in data.avg_score.items() if k != "overall"}
-    if task_scores:
-        console.print("  [dim]Scores by task type:[/dim]")
-        for task, score in sorted(task_scores.items()):
-            console.print(f"    {task}: {score}/100")
-        console.print()
-
-    # Suggestions
+    # Suggestions — discovery-first
     console.print("  [bold]Next steps:[/bold]")
-    if data.long_sessions > 0:
-        console.print("    [cyan]ctxray distill[/cyan]  -- extract key turns from long sessions")
-    else:
-        console.print("    [cyan]ctxray distill[/cyan]  -- extract key turns from conversations")
-    console.print("    [cyan]ctxray insights[/cyan] -- compare your patterns to research-optimal")
-    console.print("    [cyan]ctxray compress[/cyan] -- optimize prompts for fewer tokens")
+    console.print("    [cyan]ctxray wrapped[/cyan]  -- your AI coding persona + shareable card")
+    console.print("    [cyan]ctxray insights[/cyan] -- your patterns vs research-optimal")
+    console.print("    [cyan]ctxray privacy[/cyan]  -- what data you've sent where")
 
     console.print()
     return console.export_text()

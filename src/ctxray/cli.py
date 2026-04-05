@@ -43,13 +43,14 @@ def _copy_to_clip(text: str, quiet: bool = False) -> None:
 
 app = typer.Typer(
     name="ctxray",
-    help="Linter for your AI prompts — score, rewrite, and analyze across 9 AI tools.",
+    help="See how you really use AI — X-ray your coding sessions across 9 AI tools.",
     no_args_is_help=False,
     rich_markup_mode="rich",
     epilog=(
         "Quick start:\n\n"
-        '  ctxray check "prompt"  Score + lint + rewrite in one command\n\n'
         "  ctxray scan            Discover prompts from your AI tools\n\n"
+        "  ctxray wrapped         Your AI coding persona + shareable card\n\n"
+        "  ctxray insights        Your patterns vs research-optimal\n\n"
         "  ctxray                 See your dashboard"
     ),
 )
@@ -201,13 +202,22 @@ def template_use(
     db.increment_template_usage(name)
 
 
-def _register_late_commands() -> None:
-    """Register commands after all @app.command() definitions to control help panel order."""
-    from ctxray.commands.telemetry import telemetry_app
+def _register_discover_commands() -> None:
+    """Register Discover panel first so it appears as the top panel in --help."""
     from ctxray.commands.wrapped import wrapped
 
+    app.command(rich_help_panel="Discover")(wrapped)
+
+
+# Register Discover panel BEFORE any @app.command() so it appears first in --help
+_register_discover_commands()
+
+
+def _register_late_commands() -> None:
+    """Register remaining commands after all @app.command() definitions."""
+    from ctxray.commands.telemetry import telemetry_app
+
     app.add_typer(template_app, name="template", rich_help_panel="Manage")
-    app.command(rich_help_panel="Manage")(wrapped)
     app.add_typer(
         telemetry_app,
         name="telemetry",
@@ -252,7 +262,7 @@ def main(
     ),
     json_output: bool = typer.Option(False, "--json", help="Output dashboard as JSON"),
 ) -> None:
-    """ctxray -- Discover, analyze, and evolve your best prompts from AI coding sessions."""
+    """ctxray -- See how you really use AI."""
     if ctx.invoked_subcommand is not None:
         return
 
@@ -332,9 +342,9 @@ def scan(
     # Next steps for new users (show once, on first scan with data)
     if result.new_stored > 0 and stats.get("total_prompts", 0) <= result.new_stored + 10:
         console.print("\n[bold]Try next:[/bold]")
-        console.print('  ctxray score [dim]"your prompt"[/dim]   — instant quality score')
-        console.print("  ctxray template list         — see your prompt patterns")
-        console.print("  ctxray insights             — personal analysis")
+        console.print("  ctxray wrapped              — your AI coding persona")
+        console.print("  ctxray insights             — your patterns vs research-optimal")
+        console.print("  ctxray privacy              — what data you've sent where")
     else:
         if result.unique_after_dedup > 0:
             _show_hint(db, "scan")
@@ -742,7 +752,7 @@ def templates(
     template_list(category=category, json_output=json_output)
 
 
-@app.command(rich_help_panel="Analyze")
+@app.command(rich_help_panel="Discover")
 def style(
     json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
     source: str | None = typer.Option(
@@ -1363,7 +1373,7 @@ def build(
         _show_hint(_DB(_S().db_path), "build", json_output=json_output)
 
 
-@app.command(rich_help_panel="Optimize")
+@app.command(rich_help_panel="Discover")
 def distill(
     session_id: str = typer.Argument(None, help="Session ID to distill"),
     last: int = typer.Option(1, "--last", help="Distill the N most recent sessions"),
@@ -1762,7 +1772,7 @@ def compare(
         _copy_to_clip(json_mod.dumps(result, indent=2), quiet=json_output)
 
 
-@app.command(rich_help_panel="Analyze")
+@app.command(rich_help_panel="Discover")
 def insights(
     json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
     source: str | None = typer.Option(
@@ -1836,7 +1846,7 @@ def insights(
         _copy_to_clip(json_mod.dumps(result, indent=2), quiet=json_output)
 
 
-@app.command(rich_help_panel="Manage")
+@app.command(rich_help_panel="Discover")
 def privacy(
     json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
     copy: bool = typer.Option(False, "--copy", help="Copy result to clipboard"),
@@ -1926,7 +1936,7 @@ def privacy(
         _copy_to_clip(json_mod.dumps(summary, indent=2), quiet=json_output)
 
 
-@app.command(rich_help_panel="Analyze")
+@app.command(rich_help_panel="Discover")
 def digest(
     period: str = typer.Option("7d", help="Comparison window: 7d, 14d, 30d"),
     format: str = typer.Option("terminal", help="Output format: terminal, json"),
@@ -2308,7 +2318,7 @@ def feedback() -> None:
         console.print(f"  [dim]Could not open browser. Visit:[/dim]\n  {FEEDBACK_URL}\n")
 
 
-@app.command(rich_help_panel="Analyze")
+@app.command(rich_help_panel="Discover")
 def projects(
     source: str = typer.Option(
         None, "--source", "-s", help="Filter by source (e.g. claude-code, cursor)"
@@ -2355,7 +2365,7 @@ def projects(
     _show_hint(db, "projects", json_output=json_output)
 
 
-@app.command(rich_help_panel="Analyze")
+@app.command(rich_help_panel="Discover")
 def sessions(
     last: int = typer.Option(10, "--last", help="Show N most recent sessions"),
     source: str = typer.Option(
@@ -2408,7 +2418,7 @@ def sessions(
         _copy_to_clip(copy_text, quiet=json_output)
 
 
-@app.command(rich_help_panel="Analyze")
+@app.command(rich_help_panel="Discover")
 def patterns(
     last: int = typer.Option(500, "--last", help="Analyze N most recent prompts"),
     source: str = typer.Option(
@@ -2441,7 +2451,7 @@ def patterns(
         _copy_to_clip(copy_text, quiet=json_output)
 
 
-@app.command(rich_help_panel="Analyze")
+@app.command(rich_help_panel="Discover")
 def repetition(
     last: int = typer.Option(500, "--last", help="Analyze N most recent unique prompts"),
     source: str = typer.Option(
@@ -2474,7 +2484,7 @@ def repetition(
         _copy_to_clip(copy_text, quiet=json_output)
 
 
-@app.command(rich_help_panel="Analyze")
+@app.command(rich_help_panel="Discover")
 def agent(
     last: int = typer.Option(5, "--last", help="Analyze N most recent sessions"),
     source: str = typer.Option(

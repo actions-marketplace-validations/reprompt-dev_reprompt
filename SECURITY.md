@@ -4,9 +4,9 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 2.x     | :white_check_mark: |
-| 1.x     | :x:                |
-| < 1.0   | :x:                |
+| 3.x     | :white_check_mark: |
+| 2.x     | :x: (renamed to ctxray) |
+| < 2.0   | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -19,4 +19,4 @@ If you discover a security vulnerability, please report it responsibly:
 
 ## Scope
 
-reprompt processes local session files and stores data in a local SQLite database. It does not transmit data externally unless explicitly configured with optional backends (Ollama, OpenAI).
+ctxray processes local session files and stores data in a local SQLite database. It does not transmit data externally unless explicitly configured with optional backends (Ollama, OpenAI).

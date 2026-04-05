@@ -11,7 +11,7 @@ body:
     attributes:
       label: Your feedback
       description: Tell us anything — what you like, what could be better, or what you wish existed.
-      placeholder: "I tried reprompt rewrite and..."
+      placeholder: "I tried ctxray rewrite and..."
     validations:
       required: true
   - type: input
@@ -27,6 +27,6 @@ body:
   - type: input
     id: version
     attributes:
-      label: reprompt version
-      description: "Run: reprompt --version"
-      placeholder: "2.4.1"
+      label: ctxray version
+      description: "Run: ctxray --version"
+      placeholder: "3.0.0"
