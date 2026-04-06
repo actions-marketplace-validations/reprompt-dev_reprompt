@@ -149,7 +149,13 @@ def run_scan(
             )
             breakdown = score_prompt(dna)
             dna.overall_score = breakdown.total
-            db.store_features(dna.prompt_hash, dna.to_dict())
+            features = dna.to_dict()
+            features["structure"] = breakdown.structure
+            features["context"] = breakdown.context
+            features["position"] = breakdown.position
+            features["repetition"] = breakdown.repetition
+            features["clarity"] = breakdown.clarity
+            db.store_features(dna.prompt_hash, features)
         except Exception:
             logger.debug(
                 "PromptDNA extraction failed for prompt %s: %s", p.text[:40], exc_info=True
