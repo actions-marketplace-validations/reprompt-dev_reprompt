@@ -21,7 +21,7 @@ classifiers = [
 ]
 dependencies = [
     "typer>=0.9",
-    "rich>=13.0",
+    "rich>=15.0.0",
     "scikit-learn>=1.4",
     "pydantic-settings>=2.0",
 ]
