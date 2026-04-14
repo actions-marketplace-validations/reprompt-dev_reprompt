@@ -28,7 +28,7 @@ dependencies = [
 
 [project.optional-dependencies]
 ollama = ["requests>=2.31"]
-local = ["sentence-transformers>=2.0"]
+local = ["sentence-transformers>=5.4.1"]
 openai = ["openai>=1.0"]
 mcp = ["fastmcp>=2.0"]
 chinese = ["jieba>=0.42"]
